@@ -19,6 +19,8 @@ func reflexAgent(location, state string) string {
 
 // This function simulates the vacuum cleaner's operation
 func run(states []string) {
+	var isFirstIterationCompleted bool = false
+
 	for {
 		location := states[0]
 		var state string
@@ -38,12 +40,23 @@ func run(states []string) {
 				states[2] = "CLEAN"
 			}
 		} else if action == "RIGHT" {
+			if (states[2] == "CLEAN" && states[1]=="CLEAN") {
+				if(isFirstIterationCompleted) {
+					break
+				}
+
+				states[1]="DIRTY"
+				states[2]="DIRTY"
+
+				isFirstIterationCompleted = true
+			}
+
 			states[0] = "B"
 		} else if action == "LEFT" {
 			states[0] = "A"
 		}
 
-		time.Sleep(3 * time.Second)
+		time.Sleep(1 * time.Second)
 	}
 }
 
