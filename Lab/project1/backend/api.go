@@ -14,8 +14,6 @@ import (
 
     "google.golang.org/grpc"
     "google.golang.org/grpc/credentials/insecure"
-
-    pb "usac.sopes1/grpc/ProtoBuffer"
 )
 
 type courserecord struct {
