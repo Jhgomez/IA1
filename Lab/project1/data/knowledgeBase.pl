@@ -27,3 +27,6 @@ career(derecho, derecho, argumentacion, lectura_comprensiva, justicia).
 
 % Design and Architecture
 career(arquitectura, arquitectura, creatividad, diseno_espacial, urbanizacion).
+
+% Rules
+suggested_career(Faculty, Career, Aptitude, Skill, Interest) := career(Faculty, Career, Aptitude, Skill, Interest)
