@@ -1,8 +1,10 @@
-package main
+package KnowledgeSource
 
 import (
 	"os"
 	"sync"
+	"fmt"
+	"log"
 
 	"github.com/mndrix/golog"
 )
@@ -10,7 +12,7 @@ import (
 type Knowledge interface {
 	GetMachine() golog.Machine
 	LoadMachine(url string) golog.Machine
-	SuggestCareers() []string
+	SuggestCareers(interest, aptitude, skill string) []string
 }
 
 type KnowledgeImpl struct {}
@@ -18,7 +20,7 @@ type KnowledgeImpl struct {}
 var machine golog.Machine
 var once sync.Once
 
-func (k KnowledgeImpl) GetMachine() golog.Machine {
+func init() {
 	once.Do(func() {
 		knowledgeBase, err := os.ReadFile("./knowledgeBase.pl")
 
@@ -29,11 +31,39 @@ func (k KnowledgeImpl) GetMachine() golog.Machine {
 		machine = golog.NewMachine().Consult(string(knowledgeBase))
 	})
 
+	log.Println("Initialization")
+}
+
+func (k KnowledgeImpl) GetMachine() golog.Machine {
+	if machine == nil {
+		once.Do(func() {
+			knowledgeBase, err := os.ReadFile("./knowledgeBase.pl")
+
+			if err != nil {
+				panic(err)
+			}
+
+			machine = golog.NewMachine().Consult(string(knowledgeBase))
+		})
+	}
+
 	return machine
 }
 
-func (k KnowledgeImpl) SuggestCareers() []string {
-	return []string{}
+func (k KnowledgeImpl) SuggestCareers(aptitude, skill, interest string) []string {
+	query := fmt.Sprintf("career(Faculty, Career, %s, %s, %s).", aptitude, skill, interest)
+	results := []string{}
+
+	solutions := machine.ProveAll(query)
+
+	for _, solution := range solutions {
+		faculty := solution.ByName_("Faculty").String()
+		career := solution.ByName_("Career").String()
+
+		results = append(results, fmt.Sprintf("%s, %s", faculty, career))
+	}
+
+	return results
 }
 
 func (k KnowledgeImpl) LoadMachine(url string) golog.Machine {
@@ -53,7 +83,9 @@ func (k KnowledgeImpl) LoadMachine(url string) golog.Machine {
 // }
 
 // func main() {
-// 	tryIt(KnowledgeImpl{})
+// 	fmt.Println(KnowledgeImpl{}.SuggestCareers("matematica", "dibujo", "construccion"))
+// 	// tryIt(KnowledgeImpl{})
+
 // //  ptr = (*int)(unsafe.Pointer(uintptr(unsafe.Pointer(ptr)) + uintptr(unsafe.Sizeof(arr[0]))))
 // //  fmt.Println(*ptr) // output: 2
 // }
