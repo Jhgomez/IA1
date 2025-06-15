@@ -4,57 +4,43 @@ import (
 	"os"
 	"sync"
 	"fmt"
-	"log"
 
 	"github.com/mndrix/golog"
 )
 
 type Knowledge interface {
-	GetMachine() golog.Machine
-	LoadMachine(url string) golog.Machine
+	LoadMachine(url string)
 	SuggestCareers(interest, aptitude, skill string) []string
 }
 
-type KnowledgeImpl struct {}
-
-var machine golog.Machine
-var once sync.Once
-
-func init() {
-	once.Do(func() {
-		knowledgeBase, err := os.ReadFile("./knowledgeBase.pl")
-
-		if err != nil {
-			panic(err)
-		}
-
-		machine = golog.NewMachine().Consult(string(knowledgeBase))
-	})
-
-	log.Println("Initialization")
+type knowledgeImpl struct {
+	machine golog.Machine
 }
 
-func (k KnowledgeImpl) GetMachine() golog.Machine {
-	if machine == nil {
+var once sync.Once
+var knowledge Knowledge
+
+func GetKnowledgeSource() Knowledge {
+	if knowledge == nil {
 		once.Do(func() {
-			knowledgeBase, err := os.ReadFile("./knowledgeBase.pl")
+			knowledgeBase, err := os.ReadFile("../knowledge/knowledgeBase.pl")
 
 			if err != nil {
 				panic(err)
 			}
 
-			machine = golog.NewMachine().Consult(string(knowledgeBase))
+			knowledge = knowledgeImpl{ machine: golog.NewMachine().Consult(string(knowledgeBase)) }
 		})
 	}
 
-	return machine
+	return knowledge
 }
 
-func (k KnowledgeImpl) SuggestCareers(aptitude, skill, interest string) []string {
+func (k knowledgeImpl) SuggestCareers(aptitude, skill, interest string) []string {
 	query := fmt.Sprintf("career(Faculty, Career, %s, %s, %s).", aptitude, skill, interest)
 	results := []string{}
 
-	solutions := machine.ProveAll(query)
+	solutions := k.machine.ProveAll(query)
 
 	for _, solution := range solutions {
 		faculty := solution.ByName_("Faculty").String()
@@ -66,16 +52,14 @@ func (k KnowledgeImpl) SuggestCareers(aptitude, skill, interest string) []string
 	return results
 }
 
-func (k KnowledgeImpl) LoadMachine(url string) golog.Machine {
-	knowledgeBase, err := os.ReadFile("./knowledgeBase.pl")
+func (k knowledgeImpl) LoadMachine(url string) {
+	knowledgeBase, err := os.ReadFile(url)
 
 		if err != nil {
 			panic(err)
 		}
 
-	machine = golog.NewMachine().Consult(string(knowledgeBase))
-
-	return machine
+	k.machine = golog.NewMachine().Consult(string(knowledgeBase))
 }
 
 // func tryIt(k Knowledge) {
