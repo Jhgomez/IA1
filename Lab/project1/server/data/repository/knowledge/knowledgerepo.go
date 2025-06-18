@@ -1,13 +1,14 @@
 package knowledgerepo
 
 import (
-	"unimatch/server/data/db/dao"
+	"unimatchserver/data/db/dao"
 )
 
 type KnowledgeRepo interface {
 	GetFacts() (string, error)
 	AddFact(Faculty, Career, Aptitude, Skill, Interest string) (int64, error)
 	DeleteFact(Faculty, Career string) (int64, error)
+	UpdateFact(Faculty, Career, Aptitude, Skill, Interest string) (int64, error)
 }
 
 type knowledgeRepoImpl struct {
@@ -36,10 +37,14 @@ func (r knowledgeRepoImpl) DeleteFact(Faculty, Career string) (int64, error) {
 	return r.dao.DeleteFact(Faculty, Career)
 }
 
+func (r knowledgeRepoImpl) UpdateFact(Faculty, Career, Aptitude, Skill, Interest string) (int64, error) {
+	return r.dao.UpdateFact(Faculty, Career, Aptitude, Skill, Interest)
+}
+
 // func main() {
 // 	repo := GetKnowledgeRepo()
 
-// 	rows, err := repo.AddFact("ingenieria", "sistemas", "logica", "programacion", "tecnologia")
+// 	rows, err := repo.UpdateFact("ingenieria", "sistemas", "logica3", "programacion", "tecnologia")
 // 	// rows, err := repo.DeleteFact("ingenieria", "sistemas")
 
 // 	if err != nil {
