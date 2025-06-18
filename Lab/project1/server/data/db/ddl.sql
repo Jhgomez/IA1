@@ -20,7 +20,7 @@ IF OBJECT_ID('proyecto1.careers_knowledge', 'U') IS NOT NULL
     DROP TABLE proyecto1.careers_knowledge;
 GO
 
-CREATE TABLE careers_knowledge (
+CREATE TABLE proyecto1.careers_knowledge (
     Faculty VARCHAR(24),
     Career VARCHAR(64),
     Aptitude VARCHAR(80),
@@ -29,3 +29,17 @@ CREATE TABLE careers_knowledge (
     PRIMARY KEY(Faculty, Career)
 );
 GO
+
+INSERT INTO proyecto1.careers_knowledge(Faculty, Career, Aptitude, Skill, Interest)
+VALUES ('ingenieria', 'quimica', 'analisis', 'laboratorio', 'procesos_industriales');
+
+INSERT INTO proyecto1.careers_knowledge(Faculty, Career, Aptitude, Skill, Interest)
+VALUES ('ingenieria', 'electricta', 'razonamiento', 'circuitos', 'energia');
+
+INSERT INTO proyecto1.careers_knowledge(Faculty, Career, Aptitude, Skill, Interest)
+VALUES ('ingenieria', 'mecanica', 'resolucion_de_problemas', 'diseno_mecanico', 'maquinaria');
+
+-- INSERT INTO proyecto1.careers_knowledge(Faculty, Career, Aptitude, Skill, Interest)
+-- VALUES ('', '', '', '', '');
+
+select * from proyecto1.careers_knowledge
