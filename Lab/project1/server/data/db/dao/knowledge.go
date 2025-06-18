@@ -6,7 +6,7 @@ import (
 
 	"database/sql"
 
-	"unimatch/server/data/db"
+	"unimatchserver/data/db"
 )
 
 type career struct {
@@ -21,6 +21,7 @@ type KnowledgeDao interface {
 	GetFacts() (string, error)
 	AddFact(Faculty, Career, Aptitude, Skill, Interest string) (int64, error)
 	DeleteFact(Faculty, Career string) (int64, error)
+	UpdateFact(Faculty, Career, Aptitude, Skill, Interest string) (int64, error)
 }
 
 type knowledgeDaoImpl struct {
@@ -69,6 +70,35 @@ func (k knowledgeDaoImpl) GetFacts() (string, error) {
 
 	// Print the JSON data
 	return string(jsonData), nil
+}
+
+func (k knowledgeDaoImpl) UpdateFact(Faculty, Career, Aptitude, Skill, Interest string) (int64, error) {
+	stmt, err := k.db.GetConnection().Prepare("UPDATE proyecto1.careers_knowledge SET Aptitude = @Aptitude, Skill = @Skill, Interest = @Interest WHERE Faculty = @Faculty AND Career = @Career;")
+    if err != nil {
+        return 0, err
+    }
+
+    defer stmt.Close()
+
+    // Execute the prepared statement
+    result, err := stmt.Exec(
+        sql.Named("Faculty", Faculty),
+        sql.Named("Career", Career),
+        sql.Named("Aptitude", Aptitude),
+		sql.Named("Skill", Skill),
+		sql.Named("Interest", Interest),
+    )
+    if err != nil {
+        return 0, err
+    }
+
+    // Get the number of row inserted
+    rowInserted, err := result.RowsAffected()
+    if err != nil {
+        return 0, err
+    }
+
+    return rowInserted, nil
 }
 
 func (k knowledgeDaoImpl) AddFact(Faculty, Career, Aptitude, Skill, Interest string) (int64, error) {
@@ -129,8 +159,8 @@ func (k knowledgeDaoImpl) DeleteFact(Faculty, Career string) (int64, error) {
 // func main() {
 // 	repo := GetKnowledgeDao()
 
-// 	// rows, err := repo.AddFact("ingenieria", "sistemas", "logica", "programacion", "tecnologia")
-// 	rows, err := repo.DeleteFact("ingenieria", "sistemas")
+// 	rows, err := repo.UpdateFact("ingenieria", "sistemas", "logica2", "programacion", "tecnologia")
+// 	// rows, err := repo.DeleteFact("ingenieria", "sistemas")
 
 // 	if err != nil {
 // 		fmt.Printf("Error inserting career: %v\n", err)
