@@ -1,4 +1,4 @@
-package main
+package knowledgedao
 
 import (
 	"encoding/json"
@@ -17,7 +17,7 @@ type career struct {
 	Interest string `json:"Interest"`
 }
 
-type KnowledgeDao Dao interface {
+type KnowledgeDao interface {
 	GetFacts() (string, error)
 	AddFact(Faculty, Career, Aptitude, Skill, Interest string) (int64, error)
 	DeleteFact(Faculty, Career string) (int64, error)
@@ -126,19 +126,19 @@ func (k knowledgeDaoImpl) DeleteFact(Faculty, Career string) (int64, error) {
     return rowDeleted, nil
 }
 
-func main() {
-	repo := GetKnowledgeDao()
+// func main() {
+// 	repo := GetKnowledgeDao()
 
-	// rows, err := repo.AddFact("ingenieria", "sistemas", "logica", "programacion", "tecnologia")
-	rows, err := repo.DeleteFact("ingenieria", "sistemas")
+// 	// rows, err := repo.AddFact("ingenieria", "sistemas", "logica", "programacion", "tecnologia")
+// 	rows, err := repo.DeleteFact("ingenieria", "sistemas")
 
-	if err != nil {
-		fmt.Printf("Error inserting career: %v\n", err)
-	}
+// 	if err != nil {
+// 		fmt.Printf("Error inserting career: %v\n", err)
+// 	}
 
-	fmt.Printf("%d Rows inserted\n", rows)
+// 	fmt.Printf("%d Rows inserted\n", rows)
 
-	json, _ := repo.GetFacts()
+// 	json, _ := repo.GetFacts()
 
-	fmt.Println(json)
-}
+// 	fmt.Println(json)
+// }

@@ -30,7 +30,7 @@ func GetKnowledgeDb() Knowledgedb {
 }
 
 func init() {
-	connString := "server=localhost;port=1433;user id=sa;password=abcdeF1+"
+	connString := "server=localhost;port=1433;user id=sa;password=abcdeF1+;database=ia1"
 
     conn, err := sql.Open("sqlserver", connString) // load sql server driver
 
