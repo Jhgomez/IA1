@@ -17,26 +17,26 @@ type career struct {
 	Interest string `json:"Interest"`
 }
 
-type KnowledgeRepository interface {
+type KnowledgeDao Dao interface {
 	GetFacts() (string, error)
 	AddFact(Faculty, Career, Aptitude, Skill, Interest string) (int64, error)
-	DeleteFact(Faculty, Career string)
+	DeleteFact(Faculty, Career string) (int64, error)
 }
 
-type knowledgeRepositoryImpl struct {
+type knowledgeDaoImpl struct {
 	db db.Knowledgedb
 }
 
-var knowledgeRepository KnowledgeRepository
+var knowledgeDao KnowledgeDao
 
-func GetKnowledgeRepository() KnowledgeRepository {
-	if knowledgeRepository == nil {
-		knowledgeRepository = knowledgeRepositoryImpl{ db.GetKnowledgeDb() }
+func GetKnowledgeDao() KnowledgeDao {
+	if knowledgeDao == nil {
+		knowledgeDao = knowledgeDaoImpl{ db.GetKnowledgeDb() }
 	}
-	return knowledgeRepository
+	return knowledgeDao
 }
 
-func (k knowledgeRepositoryImpl) GetFacts() (string, error) {
+func (k knowledgeDaoImpl) GetFacts() (string, error) {
 	rows, err := k.db.GetConnection().Query("SELECT * FROM proyecto1.careers_knowledge")
 
 	if err != nil {
@@ -71,7 +71,7 @@ func (k knowledgeRepositoryImpl) GetFacts() (string, error) {
 	return string(jsonData), nil
 }
 
-func (k knowledgeRepositoryImpl) AddFact(Faculty, Career, Aptitude, Skill, Interest string) (int64, error) {
+func (k knowledgeDaoImpl) AddFact(Faculty, Career, Aptitude, Skill, Interest string) (int64, error) {
 	stmt, err := k.db.GetConnection().Prepare("INSERT INTO proyecto1.careers_knowledge(Faculty, Career, Aptitude, Skill, Interest) VALUES (@Faculty, @Career, @Aptitude, @Skill, @Interest);")
     if err != nil {
         return 0, err
@@ -100,14 +100,37 @@ func (k knowledgeRepositoryImpl) AddFact(Faculty, Career, Aptitude, Skill, Inter
     return rowInserted, nil
 }
 
-func (k knowledgeRepositoryImpl) DeleteFact(Faculty, Career string) {
+func (k knowledgeDaoImpl) DeleteFact(Faculty, Career string) (int64, error) {
+	stmt, err := k.db.GetConnection().Prepare("DELETE FROM proyecto1.careers_knowledge WHERE Faculty = @Faculty AND Career = @Career;")
+    if err != nil {
+        return 0, err
+    }
 
+    defer stmt.Close()
+
+    // Execute the prepared statement
+    result, err := stmt.Exec(
+        sql.Named("Faculty", Faculty),
+        sql.Named("Career", Career),
+    )
+    if err != nil {
+        return 0, err
+    }
+
+    // Get the number of row inserted
+    rowDeleted, err := result.RowsAffected()
+    if err != nil {
+        return 0, err
+    }
+
+    return rowDeleted, nil
 }
 
 func main() {
-	repo := GetKnowledgeRepository()
+	repo := GetKnowledgeDao()
 
-	rows, err := repo.AddFact("ingenieria", "sistemas", "logica", "programacion", "tecnologia")
+	// rows, err := repo.AddFact("ingenieria", "sistemas", "logica", "programacion", "tecnologia")
+	rows, err := repo.DeleteFact("ingenieria", "sistemas")
 
 	if err != nil {
 		fmt.Printf("Error inserting career: %v\n", err)
