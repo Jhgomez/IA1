@@ -28,6 +28,10 @@ type FactDto struct {
 	Interest string `json:"Interest"`
 }
 
+type apiErrorMessage struct {
+	Error string `json:"error"`
+}
+
 var api API
 
 func GetApi() API {
@@ -49,11 +53,6 @@ func (a apiImpl) GetFacts() ([]FactDto, error) {
         return []FactDto{}, err
     }
 
-	// Check the status code
-	if response.StatusCode < 200 || response.StatusCode >= 300 {
-		return []FactDto{}, errors.New(fmt.Sprintf("Unsuccessful response: %d %s\n", response.StatusCode, http.StatusText(response.StatusCode)))
-	}
-
     defer response.Body.Close()
 
     body, err := io.ReadAll(response.Body)
@@ -62,6 +61,13 @@ func (a apiImpl) GetFacts() ([]FactDto, error) {
 		fmt.Printf("error reading body %v", err)
         return []FactDto{}, err
     }
+
+	// Check the status code
+	err = checkResponseCode(response, body)
+
+	if err != nil {
+		return []FactDto{}, err
+	}
 
 	var facts []FactDto
 
@@ -89,11 +95,6 @@ func (a apiImpl) AddFact(Faculty, Career, Aptitude, Skill, Interest string) (int
         return -1, err
     }
 
-	// Check the status code
-	if response.StatusCode < 200 || response.StatusCode >= 300 {
-		return -1, errors.New(fmt.Sprintf("Unsuccessful response: %d %s\n", response.StatusCode, http.StatusText(response.StatusCode)))
-	}
-
 	defer response.Body.Close()
 
     body, err := io.ReadAll(response.Body)
@@ -102,6 +103,13 @@ func (a apiImpl) AddFact(Faculty, Career, Aptitude, Skill, Interest string) (int
 		fmt.Printf("error reading body %v", err)
         return -1, err
     }
+
+	// Check the status code
+	err = checkResponseCode(response, body)
+
+	if err != nil {
+		return -1, err
+	}
 
 	var data map[string]interface{}
 
@@ -123,29 +131,120 @@ func (a apiImpl) AddFact(Faculty, Career, Aptitude, Skill, Interest string) (int
 }
 
 func (a apiImpl) DeleteFact(Faculty, Career string) (int, error) {
-	return 1, nil
+	// response, err := http.Post(fmt.Sprintf("%s/getFatcs", localDbSubstituteServer), "application/json", bytes.NewBuffer(courseJson) )
+	dataJson := make(map[string]interface{})
+
+	dataJson["Faculty"] = Faculty
+	dataJson["Career"] = Career
+	// data["List_Of_SOmething"] = []string{"Math"}  this is how to define a parse an object to a Json without an actual struct
+
+	postJson, err := json.Marshal(dataJson)
+
+	response, err := http.Post(fmt.Sprintf("%s/deleteFact", localDbSubstituteServer), "application/json", bytes.NewBuffer(postJson))
+
+    if err != nil {
+		fmt.Printf("error in post %v", err)
+        return -1, err
+    }
+
+	defer response.Body.Close()
+
+    body, err := io.ReadAll(response.Body)
+
+    if err != nil {
+		fmt.Printf("error reading body %v", err)
+        return -1, err
+    }
+
+	// Check the status code
+	err = checkResponseCode(response, body)
+
+	if err != nil {
+		return -1, err
+	}
+
+	var data map[string]interface{}
+
+	err = json.Unmarshal(body, &data)
+
+    if err != nil {
+		fmt.Printf("error parsing to object %v\n", err)
+		return -1, err
+	}
+
+	num, err := strconv.Atoi(fmt.Sprintf("%v",(data["rows"])))
+
+	if err != nil {
+		fmt.Printf("error parsing rows %v\n", err)
+		return -1, err
+	}
+
+	return num, nil
 }
 
 func (a apiImpl) UpdateFact(Faculty, Career, Aptitude, Skiclll, Interest string) (int, error) {
 	return 1, nil
 }
 
+func checkResponseCode(response *http.Response, body []byte) error {
+	// Check the status code
+	if response.StatusCode < 200 || response.StatusCode >= 300 {
+		var errorMsg apiErrorMessage
+
+		err := json.Unmarshal(body, &errorMsg)
+
+		if err != nil {
+			fmt.Printf("error parsing to error message %v\n", err)
+			return err
+		}
+
+		errorString := fmt.Sprintf("Unsuccessful response: error code %d %s %s\n", response.StatusCode, http.StatusText(response.StatusCode), errorMsg.Error)
+
+		return errors.New(errorString)
+	} else {
+		return nil
+	}
+}
+
 func main() {
 	apix := GetApi()
 
-	rows, err := apix.AddFact("ingenieria", "civil", "matematica", "dibujo", "construccion")
+	// rows, err := apix.AddFact("ingenieria", "civil", "matematica", "dibujo", "construccion")
+
+	// if err != nil {
+	// 	fmt.Printf("%v", err)
+	// }
+
+	// fmt.Println(rows)
+
+
+
+	rows, err := apix.DeleteFact("ingenieria", "civilx")
 
 	if err != nil {
-		fmt.Printf("error en %v", err)
+		fmt.Printf("%v", err)
 	}
 
 	fmt.Println(rows)
 
-	facts, err := apix.GetFacts()
 
-	if err != nil {
-		fmt.Printf("error en %v", err)
-	}
 
-    fmt.Println(facts)
+
+	// facts, err := apix.GetFacts()
+
+	// if err != nil {
+	// 	fmt.Printf("error en %v", err)
+	// }
+
+    // fmt.Println(facts)
 }
+
+
+// // Generic map function
+// func Map[T any, U any](input []T, transform func(T) U) []U {
+// 	output := make([]U, len(input))
+// 	for i, v := range input {
+// 		output[i] = transform(v)
+// 	}
+// 	return output
+// }
