@@ -47,7 +47,7 @@ func (s knowledgeServiceImpl) GetFacts(c *gin.Context) {
     facts, err := s.repo.GetFacts()
 
     if err != nil {
-        c.JSON(http.StatusBadRequest, gin.H{"error getting facts": fmt.Sprintf("%v", err)})
+        c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("%v", err)})
         return
     }
 
@@ -59,17 +59,20 @@ func (s knowledgeServiceImpl) AddFact(c *gin.Context) {
 
     if careerDataError := c.BindJSON(&career); careerDataError != nil {
         fmt.Println(careerDataError)
-        c.JSON(http.StatusBadRequest, gin.H{"error parsing from post JSON": fmt.Sprintf("%v", careerDataError.Error())})
+        c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("%v", careerDataError.Error())})
         return
     }
 
     rows, err := s.repo.AddFact(career.Faculty, career.Career, career.Aptitude, career.Skill, career.Interest)
 
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error adding fact": fmt.Sprintf("%v", err)})
+		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("%v", err)})
+        return
 	}
 
-    c.String(http.StatusOK, fmt.Sprintf("fact added, rows inserted: %d", rows))
+    c.JSON(http.StatusOK, gin.H{"rows": rows })
+
+    // c.String(http.StatusOK, fmt.Sprintf("fact added, rows inserted: %d", rows))
 }
 
 func (s knowledgeServiceImpl) DeleteFact(c *gin.Context) {
@@ -84,10 +87,12 @@ func (s knowledgeServiceImpl) DeleteFact(c *gin.Context) {
     rows, err := s.repo.DeleteFact(career.Faculty, career.Career)
 
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error parsing from post JSON": fmt.Sprintf("%v", err)})
+		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("%v", err)})
+        return
 	}
 
-    c.String(http.StatusOK, fmt.Sprintf("fact deleted, rows deleted: %d", rows))
+    // c.String(http.StatusOK, fmt.Sprintf("fact deleted, rows deleted: %d", rows))
+    c.JSON(http.StatusOK, gin.H{"rows": rows })
 }
 
 func (s knowledgeServiceImpl) UpdateFact(c *gin.Context) {
@@ -95,15 +100,17 @@ func (s knowledgeServiceImpl) UpdateFact(c *gin.Context) {
 
     if careerDataError := c.BindJSON(&career); careerDataError != nil {
         fmt.Println(careerDataError)
-        c.JSON(http.StatusBadRequest, gin.H{"error parsing from post JSON": fmt.Sprintf("%v", careerDataError.Error())})
+        c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("%v", careerDataError.Error())})
         return
     }
 
     rows, err := s.repo.UpdateFact(career.Faculty, career.Career, career.Aptitude, career.Skill, career.Interest)
 
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error adding fact": fmt.Sprintf("%v", err)})
+		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("%v", err)})
+        return
 	}
 
-    c.String(http.StatusOK, fmt.Sprintf("fact added, rows inserted: %d", rows))
+    // c.String(http.StatusOK, fmt.Sprintf("fact added, rows inserted: %d", rows))
+    c.JSON(http.StatusOK, gin.H{"rows": rows })
 }
