@@ -1,4 +1,4 @@
-package main
+package api
 
 import (
     "encoding/json"
@@ -182,8 +182,52 @@ func (a apiImpl) DeleteFact(Faculty, Career string) (int, error) {
 	return num, nil
 }
 
-func (a apiImpl) UpdateFact(Faculty, Career, Aptitude, Skiclll, Interest string) (int, error) {
-	return 1, nil
+func (a apiImpl) UpdateFact(Faculty, Career, Aptitude, Skill, Interest string) (int, error) {
+	// response, err := http.Post(fmt.Sprintf("%s/getFatcs", localDbSubstituteServer), "application/json", bytes.NewBuffer(courseJson) )
+	careerFact := FactDto{Faculty, Career, Aptitude, Skill, Interest}
+
+	postJson, err := json.Marshal(careerFact)
+
+	response, err := http.Post(fmt.Sprintf("%s/updateFact", localDbSubstituteServer), "application/json", bytes.NewBuffer(postJson))
+
+    if err != nil {
+		fmt.Printf("error in post %v", err)
+        return -1, err
+    }
+
+	defer response.Body.Close()
+
+    body, err := io.ReadAll(response.Body)
+
+    if err != nil {
+		fmt.Printf("error reading body %v", err)
+        return -1, err
+    }
+
+	// Check the status code
+	err = checkResponseCode(response, body)
+
+	if err != nil {
+		return -1, err
+	}
+
+	var data map[string]interface{}
+
+	err = json.Unmarshal(body, &data)
+
+    if err != nil {
+		fmt.Printf("error parsing to object %v\n", err)
+		return -1, err
+	}
+
+	num, err := strconv.Atoi(fmt.Sprintf("%v",(data["rows"])))
+
+	if err != nil {
+		fmt.Printf("error parsing rows %v\n", err)
+		return -1, err
+	}
+
+	return num, nil
 }
 
 func checkResponseCode(response *http.Response, body []byte) error {
@@ -206,38 +250,79 @@ func checkResponseCode(response *http.Response, body []byte) error {
 	}
 }
 
-func main() {
-	apix := GetApi()
+// func main() {
+// 	apix := GetApi()
 
-	// rows, err := apix.AddFact("ingenieria", "civil", "matematica", "dibujo", "construccion")
+// 	facts, err := apix.GetFacts()
 
-	// if err != nil {
-	// 	fmt.Printf("%v", err)
-	// }
+// 	if err != nil {
+// 		fmt.Printf("error en %v", err)
+// 	}
 
-	// fmt.Println(rows)
-
-
-
-	rows, err := apix.DeleteFact("ingenieria", "civilx")
-
-	if err != nil {
-		fmt.Printf("%v", err)
-	}
-
-	fmt.Println(rows)
+//     fmt.Println(facts)
 
 
 
 
-	// facts, err := apix.GetFacts()
+// 	rows, err := apix.UpdateFact("ingenieria", "civil", "gay4", "dibujo", "construccion")
 
-	// if err != nil {
-	// 	fmt.Printf("error en %v", err)
-	// }
+// 	if err != nil {
+// 		fmt.Printf("%v", err)
+// 	}
 
-    // fmt.Println(facts)
-}
+// 	fmt.Println(rows)
+
+
+
+// 	facts, err = apix.GetFacts()
+
+// 	if err != nil {
+// 		fmt.Printf("error en %v", err)
+// 	}
+
+//     fmt.Println(facts)
+
+
+
+// 	rows, err = apix.DeleteFact("ingenieria", "civil")
+
+// 	if err != nil {
+// 		fmt.Printf("%v", err)
+// 	}
+
+// 	fmt.Println(rows)
+
+
+
+// 	facts, err = apix.GetFacts()
+
+// 	if err != nil {
+// 		fmt.Printf("error en %v", err)
+// 	}
+
+//     fmt.Println(facts)
+
+
+
+// 	rows, err = apix.AddFact("ingenieria", "civil", "matematica", "dibujo", "construccion")
+
+// 	if err != nil {
+// 		fmt.Printf("%v", err)
+// 	}
+
+// 	fmt.Println(rows)
+
+
+
+
+// 	facts, err = apix.GetFacts()
+
+// 	if err != nil {
+// 		fmt.Printf("error en %v", err)
+// 	}
+
+//     fmt.Println(facts)
+// }
 
 
 // // Generic map function
