@@ -1,7 +1,6 @@
 package knowledgedao
 
 import (
-	"encoding/json"
 	"fmt"
 
 	"database/sql"
@@ -9,16 +8,16 @@ import (
 	"unimatchserver/data/db"
 )
 
-type career struct {
-	Faculty  string `json:"Faculty"`
-	Career   string `json:"Career"`
-	Aptitude string `json:"Aptitude"`
-	Skill    string `json:"Skill"`
-	Interest string `json:"Interest"`
+type careerDto struct {
+	Faculty  string
+	Career   string
+	Aptitude string
+	Skill    string
+	Interest string
 }
 
 type KnowledgeDao interface {
-	GetFacts() (string, error)
+	GetFacts() ([]careerDto, error)
 	AddFact(Faculty, Career, Aptitude, Skill, Interest string) (int64, error)
 	DeleteFact(Faculty, Career string) (int64, error)
 	UpdateFact(Faculty, Career, Aptitude, Skill, Interest string) (int64, error)
@@ -37,20 +36,20 @@ func GetKnowledgeDao() KnowledgeDao {
 	return knowledgeDao
 }
 
-func (k knowledgeDaoImpl) GetFacts() (string, error) {
+func (k knowledgeDaoImpl) GetFacts() ([]careerDto, error) {
 	rows, err := k.db.GetConnection().Query("SELECT * FROM proyecto1.careers_knowledge")
 
 	if err != nil {
 		fmt.Printf("Error querying the database: %v", err)
-		return "", err
+		return []careerDto{}, err
 	}
 
-	var careers []career
+	var careers []careerDto
 	for rows.Next() {
-		var career career
+		var career careerDto
 		if err := rows.Scan(&career.Faculty, &career.Career, &career.Aptitude, &career.Skill, &career.Interest); err != nil {
 			fmt.Printf("Error scanning row: %v", err)
-			return "", err
+			return []careerDto{}, err
 		}
 		careers = append(careers, career)
 	}
@@ -58,18 +57,10 @@ func (k knowledgeDaoImpl) GetFacts() (string, error) {
 	// Check for errors after iteration
 	if err := rows.Err(); err != nil {
 		fmt.Printf("Error during row iteration: %v", err)
-		return "", err
+		return []careerDto{}, err
 	}
 
-	// Convert the slice of structs to JSON
-	jsonData, err := json.Marshal(careers)
-	if err != nil {
-		fmt.Printf("Error marshalling data to JSON: %v", err)
-		return "", err
-	}
-
-	// Print the JSON data
-	return string(jsonData), nil
+    return careers, nil
 }
 
 func (k knowledgeDaoImpl) UpdateFact(Faculty, Career, Aptitude, Skill, Interest string) (int64, error) {
