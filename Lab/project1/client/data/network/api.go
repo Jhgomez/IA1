@@ -4,15 +4,18 @@ import (
     "encoding/json"
     "net/http"
     "fmt"
+	"errors"
+	"bytes"
+	"strconv"
     
 	"io"	
 )
 
 type API interface {
 	GetFacts() ([]FactDto, error)
-	AddFact(Faculty, Career, Aptitude, Skill, Interest string) (any, error)
-	DeleteFact(Faculty, Career string) (any, error)
-	UpdateFact(Faculty, Career, Aptitude, Skill, Interest string) (any, error)
+	AddFact(Faculty, Career, Aptitude, Skill, Interest string) (int, error)
+	DeleteFact(Faculty, Career string) (int, error)
+	UpdateFact(Faculty, Career, Aptitude, Skill, Interest string) (int, error)
 }
 
 type apiImpl struct {}
@@ -35,16 +38,21 @@ func GetApi() API {
 	return api
 }
 
-var rustServerUrl = "http://localhost:8000"
+var localDbSubstituteServer = "http://localhost:8000"
 
 func (a apiImpl) GetFacts() ([]FactDto, error) {
-    // response, err := http.Post(fmt.Sprintf("%s/getFatcs", rustServerUrl), "application/json", bytes.NewBuffer(courseJson) )
-	response, err := http.Get(fmt.Sprintf("%s/getFacts", rustServerUrl))
+    // response, err := http.Post(fmt.Sprintf("%s/getFatcs", localDbSubstituteServer), "application/json", bytes.NewBuffer(courseJson) )
+	response, err := http.Get(fmt.Sprintf("%s/getFacts", localDbSubstituteServer))
 
     if err != nil {
 		fmt.Printf("error en get %v", err)
         return []FactDto{}, err
     }
+
+	// Check the status code
+	if response.StatusCode < 200 || response.StatusCode >= 300 {
+		return []FactDto{}, errors.New(fmt.Sprintf("Unsuccessful response: %d %s\n", response.StatusCode, http.StatusText(response.StatusCode)))
+	}
 
     defer response.Body.Close()
 
@@ -68,87 +76,72 @@ func (a apiImpl) GetFacts() ([]FactDto, error) {
 
 }
 
-func (a apiImpl) AddFact(Faculty, Career, Aptitude, Skill, Interest string) (any, error) {
-	return 1, nil
-    // var factDto FactDto
+func (a apiImpl) AddFact(Faculty, Career, Aptitude, Skill, Interest string) (int, error) {
+	// response, err := http.Post(fmt.Sprintf("%s/getFatcs", localDbSubstituteServer), "application/json", bytes.NewBuffer(courseJson) )
+	careerFact := FactDto{Faculty, Career, Aptitude, Skill, Interest}
 
-    
-    // if courseDataError := c.BindJSON(&factDto); courseDataError != nil {
-    //     fmt.Println(courseDataError)
-    //     c.String(http.StatusBadRequest, courseDataError.Error())
-    //     return
-    // }
+	postJson, err := json.Marshal(careerFact)
 
-    // conn, connErr := grpc.NewClient(grpcServerUrl, opts...)
+	response, err := http.Post(fmt.Sprintf("%s/addFact", localDbSubstituteServer), "application/json", bytes.NewBuffer(postJson))
 
-    // if connErr != nil {
-    //     log.Fatalf("fail to dial: %v", connErr)
-    //     c.String(http.StatusBadRequest, connErr.Error())
-    //     return
-    // }
+    if err != nil {
+		fmt.Printf("error in post %v", err)
+        return -1, err
+    }
 
-    // defer conn.Close()
-    
-    // client := pb.NewCourseClient(conn)
+	// Check the status code
+	if response.StatusCode < 200 || response.StatusCode >= 300 {
+		return -1, errors.New(fmt.Sprintf("Unsuccessful response: %d %s\n", response.StatusCode, http.StatusText(response.StatusCode)))
+	}
 
-    // log.Println("gRPC client connected to server", grpcServerUrl)
+	defer response.Body.Close()
 
-   
+    body, err := io.ReadAll(response.Body)
 
-    // response, responseErr := client.PostCourse(ctx, &pb.FactDto{ 
-    //     Curso: factDto.Curso,
-    //     Facultad: factDto.Facultad,
-    //     Carrera: factDto.Carrera,
-    //     Region: factDto.Region,
-    // })
+    if err != nil {
+		fmt.Printf("error reading body %v", err)
+        return -1, err
+    }
 
-    // if responseErr != nil {
-    //     log.Fatalf("gRPC post failed: %v", responseErr)
-    //     c.String(http.StatusBadRequest, responseErr.Error())
-    //     return
-    // }
+	var data map[string]interface{}
 
-    // courseJson, courseJsonErr := json.Marshal(factDto)
+	err = json.Unmarshal(body, &data)
 
-    // if courseJsonErr != nil {
-    //     log.Fatalf("parsing back to Json failed: %v", courseJsonErr)
-    //     c.String(http.StatusBadRequest, courseJsonErr.Error())
-    //     return
-    // }
+    if err != nil {
+		fmt.Printf("error parsing to object %v\n", err)
+		return -1, err
+	}
 
-    // response, err := http.Post(fmt.Sprintf("%s/course", rustServerUrl), "application/json", bytes.NewBuffer(courseJson) )
+	num, err := strconv.Atoi(fmt.Sprintf("%v",(data["rows"])))
 
-    // if err != nil {
-    //     log.Fatalf("post to Rust server failed: %v", err)
-    //     c.String(http.StatusBadRequest, err.Error())
-    //     return
-    // }
+	if err != nil {
+		fmt.Printf("error parsing rows %v\n", err)
+		return -1, err
+	}
 
-    // defer response.Body.Close()
-    // body, err := io.ReadAll(response.Body)
-
-    // if err != nil {
-    //     log.Fatalf("Rust response body failure: %v", err)
-    //     c.String(http.StatusBadRequest, err.Error())
-    //     return
-    // }
-
-    // success := fmt.Sprintf("gRPC server response: %s, Rust REST server response: %s", response.Response, string(body))
-
-    // c.String(http.StatusOK, success)
-
+	return num, nil
 }
 
-func (a apiImpl) DeleteFact(Faculty, Career string) (any, error) {
+func (a apiImpl) DeleteFact(Faculty, Career string) (int, error) {
 	return 1, nil
 }
 
-func (a apiImpl) UpdateFact(Faculty, Career, Aptitude, Skiclll, Interest string) (any, error) {
+func (a apiImpl) UpdateFact(Faculty, Career, Aptitude, Skiclll, Interest string) (int, error) {
 	return 1, nil
 }
 
 func main() {
-	facts, err := GetApi().GetFacts()
+	apix := GetApi()
+
+	rows, err := apix.AddFact("ingenieria", "civil", "matematica", "dibujo", "construccion")
+
+	if err != nil {
+		fmt.Printf("error en %v", err)
+	}
+
+	fmt.Println(rows)
+
+	facts, err := apix.GetFacts()
 
 	if err != nil {
 		fmt.Printf("error en %v", err)
