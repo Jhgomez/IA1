@@ -1,4 +1,4 @@
-package homerepo
+package knowledgerepo
 
 import(
 	// "fmt"
@@ -7,26 +7,26 @@ import(
 	"unimatch/data/network"
 )
 
-type HomeRepository interface {
+type KnowledgeRepository interface {
 	LoadKnowledgeBase() (int, error)
 }
 
-type homeRepositoryImpl struct {
+type knowledgeRepositoryImpl struct {
 	knowledgeSource knowledgesource.Knowledge
 	api api.API
 }
 
-var homeRepository HomeRepository
+var homeRepository KnowledgeRepository
 
-func GetHomeRepo() HomeRepository {
+func GetKnowledgeRepo() KnowledgeRepository {
 	if homeRepository == nil {
-		homeRepository = homeRepositoryImpl{ knowledgeSource: knowledgesource.GetKnowledgeSource(), api: api.GetApi() }
+		homeRepository = knowledgeRepositoryImpl{ knowledgeSource: knowledgesource.GetKnowledgeSource(), api: api.GetApi() }
 	}
 
 	return homeRepository
 }
 
-func (r homeRepositoryImpl) LoadKnowledgeBase() (int, error) {
+func (r knowledgeRepositoryImpl) LoadKnowledgeBase() (int, error) {
 	apiFacts, err := r.api.GetFacts()
 
 	if err != nil {
