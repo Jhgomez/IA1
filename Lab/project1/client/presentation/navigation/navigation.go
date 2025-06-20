@@ -27,6 +27,7 @@ func NavigateWithNewWindow(
 	windowTitle string,
 	content fyne.CanvasObject,
 	shouldHide bool,
+	size fyne.Size,
 	onClose func(),
 ) {
 	if unimatchApp == nil {
@@ -40,6 +41,8 @@ func NavigateWithNewWindow(
 	currentWindow := backStack[backstackLen - 1]
 
 	currentWindow.SetContent(content)
+
+	currentWindow.Resize(size)
 
 	currentWindow.SetCloseIntercept(func() {
 		if shouldHide {
@@ -67,6 +70,8 @@ func NavigateWithNewWindow(
 		if shouldHide {
 			panic(errors.New("can not hide first screen on app start"))
 		}
+
+		currentWindow.CenterOnScreen()
 		
 		currentWindow.ShowAndRun()
 
@@ -84,6 +89,7 @@ func NavigateWithNewWindow(
 
 	// fmt.Println("New window")
 	// fmt.Println(&backStack)
+	currentWindow.CenterOnScreen()
 
 	currentWindow.Show()
 }
@@ -104,7 +110,7 @@ func PopBackstack() {
 	prevWindow.Show()
 }
 
-func NavigateWithCurrentWindow(windowTitle string, content fyne.CanvasObject) {
+func NavigateWithCurrentWindow(windowTitle string, size fyne.Size, content fyne.CanvasObject) {
 	if unimatchApp == nil {
 		panic(errors.New("Fyne App object can not be null"))
 	}
@@ -112,8 +118,12 @@ func NavigateWithCurrentWindow(windowTitle string, content fyne.CanvasObject) {
 	currentWindow := backStack[len(backStack) - 1]
 
 	currentWindow.SetContent(content)
+
+	currentWindow.Resize(size)
 	
 	currentWindow.SetTitle(windowTitle)
+
+	currentWindow.CenterOnScreen()
 	
 	// fmt.Println("Replaced window title")
 	// fmt.Println(backStack[len(backStack) - 1].Title())
