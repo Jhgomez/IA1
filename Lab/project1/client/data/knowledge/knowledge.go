@@ -1,4 +1,4 @@
-package Knowledgesource
+package knowledgesource
 
 import (
 	// "os"
@@ -23,7 +23,7 @@ type CareerFactDto struct {
 
 type Knowledge interface {
 	LoadCareerFacts(facts []CareerFactDto)
-	SuggestCareers(interest, aptitude, skill string) []careerDto
+	SuggestCareers(interest, aptitude, skill string) []CareerFactDto
 	StartNewMachine()
 	LoadRule(rule string)
 }
@@ -45,17 +45,35 @@ func GetKnowledgeSource() Knowledge {
 	return knowledge
 }
 
-func (k *knowledgeImpl) SuggestCareers(aptitude, skill, interest string) []careerDto {
+func (k *knowledgeImpl) SuggestCareers(aptitude, skill, interest string) []CareerFactDto {
 	query := fmt.Sprintf("career(Faculty, Career, %s, %s, %s).", aptitude, skill, interest)
-	results := []careerDto{}
+	results := []CareerFactDto{}
+
+	
 
 	solutions := k.Machine.ProveAll(query)
 
 	for _, solution := range solutions {
+		aptitude := aptitude
+		skill := skill
+		interest := interest
+
 		faculty := solution.ByName_("Faculty").String()
 		career := solution.ByName_("Career").String()
+		
+		if (aptitude == "Aptitude") {
+			aptitude = solution.ByName_("Aptitude").String()
+		}
 
-		results = append(results, careerDto{Faculty: faculty, Career: career})
+		if (skill == "Skill"){
+			skill = solution.ByName_("Skill").String()
+		}
+
+		if (interest == "Interest") {
+			interest = solution.ByName_("Interest").String()
+		}
+
+		results = append(results, CareerFactDto{Faculty: faculty, Career: career, Aptitude: aptitude, Skill: skill, Interest: interest})
 	}
 
 	return results
@@ -74,6 +92,8 @@ func (k *knowledgeImpl) LoadCareerFacts(facts []CareerFactDto) {
 	for _, fact := range facts {
 		k.Machine = k.Machine.Consult(fmt.Sprintf("career(%s, %s, %s, %s, %s).", fact.Faculty, fact.Career, fact.Aptitude, fact.Skill, fact.Interest))	
 	}
+
+	fmt.Println(facts)
 }
 
 func (k *knowledgeImpl) LoadRule(rule string) {
