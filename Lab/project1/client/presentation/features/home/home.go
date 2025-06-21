@@ -34,12 +34,12 @@ func HomeScreen() fyne.CanvasObject {
 	// Buttons
 	studentBtn := widget.NewButtonWithIcon("Student", theme.AccountIcon(), func() {
 		navigation.NavigateWithNewWindow(
-		"Formulary",  //windowTitle
-		student.StudenFirstFormulary(),  //content
-		true, // shouldHide
-		fyne.NewSize(700, 500), // windows size
-		nil, // onClose
-	)
+			"Formulary",  //windowTitle
+			student.StudenFirstFormulary(),  //content
+			true, // shouldHide
+			fyne.NewSize(700, 500), // windows size
+			nil, // onClose
+		)
 	})
 	adminBtn := widget.NewButtonWithIcon("Administrator", theme.SettingsIcon(), func() {
 		// Handle admin button click
