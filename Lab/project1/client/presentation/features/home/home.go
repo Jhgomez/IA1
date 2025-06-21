@@ -9,6 +9,9 @@ import (
 	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/widget"
+
+	"unimatch/presentation/navigation"
+	"unimatch/presentation/features/student"
 )
 
 func HomeScreen() fyne.CanvasObject {
@@ -30,7 +33,13 @@ func HomeScreen() fyne.CanvasObject {
 
 	// Buttons
 	studentBtn := widget.NewButtonWithIcon("Student", theme.AccountIcon(), func() {
-		// Handle student button click
+		navigation.NavigateWithNewWindow(
+		"Formulary",  //windowTitle
+		student.StudenFirstFormulary(),  //content
+		true, // shouldHide
+		fyne.NewSize(700, 500), // windows size
+		nil, // onClose
+	)
 	})
 	adminBtn := widget.NewButtonWithIcon("Administrator", theme.SettingsIcon(), func() {
 		// Handle admin button click
