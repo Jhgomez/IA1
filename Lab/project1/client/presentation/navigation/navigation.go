@@ -6,6 +6,7 @@ import (
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
+	"fyne.io/fyne/v2/dialog"
 )
 
 var unimatchApp fyne.App = app.New()
@@ -26,7 +27,7 @@ var backStack = []fyne.Window{}
 func NavigateWithNewWindow(
 	windowTitle string,
 	content fyne.CanvasObject,
-	shouldHide bool,
+	shouldHidePrevWindow bool,
 	size fyne.Size,
 	onClose func(),
 ) {
@@ -45,7 +46,7 @@ func NavigateWithNewWindow(
 	currentWindow.Resize(size)
 
 	currentWindow.SetCloseIntercept(func() {
-		if shouldHide {
+		if shouldHidePrevWindow {
 			if onClose != nil {
 				// if call back defined you're responsible for popping out nav stack
 				onClose()
@@ -67,7 +68,7 @@ func NavigateWithNewWindow(
 	if len(backStack) == 1 {
 		// fmt.Println("First window")
 		// fmt.Println(&backStack)
-		if shouldHide {
+		if shouldHidePrevWindow {
 			panic(errors.New("can not hide first screen on app start"))
 		}
 
@@ -83,7 +84,7 @@ func NavigateWithNewWindow(
 
 	prevWindow := backStack[len(backStack) - 2]
 
-	if shouldHide {
+	if shouldHidePrevWindow {
 		prevWindow.Hide()
 	}
 
@@ -128,4 +129,12 @@ func NavigateWithCurrentWindow(windowTitle string, size fyne.Size, content fyne.
 	// fmt.Println("Replaced window title")
 	// fmt.Println(backStack[len(backStack) - 1].Title())
 	// fmt.Println(backStack)
+}
+
+func ShowDialog(title, msg string) {
+	dialog.ShowInformation(title, msg, backStack[len(backStack) - 1])
+}
+
+func ShowErrorDialog(msg string) {
+	dialog.ShowError(errors.New(msg), backStack[len(backStack) - 1])
 }
