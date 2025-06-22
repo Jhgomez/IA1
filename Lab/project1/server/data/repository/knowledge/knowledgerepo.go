@@ -5,18 +5,21 @@ import (
 )
 
 type Career struct {
+	CareerId int
 	Faculty  string
 	Career   string
-	Aptitude string
-	Skill    string
-	Interest string
+	Aptitude []string
+	Skill    []string
+	Interest []string
 }
 
 type KnowledgeRepo interface {
 	GetFacts() ([]Career, error)
-	AddFact(Faculty, Career, Aptitude, Skill, Interest string) (int64, error)
-	DeleteFact(Faculty, Career string) (int64, error)
-	UpdateFact(Faculty, Career, Aptitude, Skill, Interest string) (int64, error)
+	AddFact(careerId int, Aptitude, Skill, Interest []string) (int64, error)
+	DeleteFact(careerId int, Aptitude, Skill, Interest string) (int64, error)
+	UpdateFact(careerId int, Aptitude, Skill, Interest, PAptitude, PSkill, PInterest []string) (int64, error)
+	AddCareer(Faculty, Career string) (int64, error)
+    DeleteCareer(careerId int) (int64, error)
 }
 
 type knowledgeRepoImpl struct {
@@ -44,11 +47,12 @@ func (r knowledgeRepoImpl) GetFacts() ([]Career, error) {
 
 	for i, career := range careersDto {
 		careers[i] = Career{
+			CareerId:	career.CareerId,
 			Faculty:	career.Faculty,
 			Career:		career.Career,
-			Aptitude:	career.Aptitude,
-			Skill:		career.Skill,
-			Interest:	career.Interest,
+			Aptitude:	career.Aptitudes,
+			Skill:		career.Skills,
+			Interest:	career.Interests,
 		}
 	}
 
@@ -65,16 +69,24 @@ func (r knowledgeRepoImpl) GetFacts() ([]Career, error) {
 	return careers, nil
 }
 
-func (r knowledgeRepoImpl) AddFact(Faculty, Career, Aptitude, Skill, Interest string) (int64, error) {
-	return r.dao.AddFact(Faculty, Career, Aptitude, Skill, Interest)
+func (r knowledgeRepoImpl) AddFact(careerId int, Aptitude, Skill, Interest []string) (int64, error) {
+	return r.dao.AddFact(careerId, Aptitude, Skill, Interest)
 }
 
-func (r knowledgeRepoImpl) DeleteFact(Faculty, Career string) (int64, error) {
-	return r.dao.DeleteFact(Faculty, Career)
+func (r knowledgeRepoImpl) DeleteFact(careerId int, Aptitude, Skill, Interest string) (int64, error) {
+	return r.dao.DeleteFact(careerId, Aptitude, Skill, Interest)
 }
 
-func (r knowledgeRepoImpl) UpdateFact(Faculty, Career, Aptitude, Skill, Interest string) (int64, error) {
-	return r.dao.UpdateFact(Faculty, Career, Aptitude, Skill, Interest)
+func (r knowledgeRepoImpl) UpdateFact(careerId int, Aptitude, Skill, Interest, PAptitude, PSkill, PInterest []string) (int64, error) {
+	return r.dao.UpdateFact(careerId, Aptitude, Skill, Interest, PAptitude, PSkill, PInterest)
+}
+
+func (r knowledgeRepoImpl) AddCareer(Faculty, Career string) (int64, error) {
+	return r.dao.AddCareer(Faculty, Career)
+}
+
+func (r knowledgeRepoImpl) DeleteCareer(careerId int) (int64, error) {
+	return r.dao.DeleteCareer(careerId)
 }
 
 // func main() {

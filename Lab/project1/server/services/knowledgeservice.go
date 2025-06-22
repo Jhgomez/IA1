@@ -10,10 +10,12 @@ import (
 )
 
 type KnowledgeService interface {
-    GetFacts(c *gin.Context)
-    AddFact(c *gin.Context)
-    DeleteFact(c *gin.Context)
-    UpdateFact(c *gin.Context)
+    GetFacts(c *gin.Context) // gets all careers
+    AddFact(c *gin.Context)   // add facts should be used in combination with "AddCareer" if adding a new career
+    AddCareer(c *gin.Context) // Adds a career without any aptitude, skill nor interest
+    DeleteFact(c *gin.Context) // Deletes a single aptitude and/or skill and/or interest
+    UpdateFact(c *gin.Context)   // updates a career's aptitude, skill nor interest but it needs a list of new aptitude, skill nor interest and the old aptitude, skill nor interest
+    DeleteCareer(c *gin.Context) // Deletes a career along with all aptitude, skill nor interest
 }
 
 type knowledgeServiceImpl struct {
@@ -31,16 +33,36 @@ func GetKnowledgeService() KnowledgeService {
 }
 
 type careerFact struct {
-	Faculty  string `json:"Faculty"`
-	Career   string `json:"Career"`
+    CareerId int    `json:"CareerId"`
+	Aptitude []string `json:"Aptitude"`
+	Skill    []string `json:"Skill"`
+	Interest []string `json:"Interest"`
+}
+
+type deletFact struct {
+    CareerId int    `json:"CareerId"`
 	Aptitude string `json:"Aptitude"`
 	Skill    string `json:"Skill"`
 	Interest string `json:"Interest"`
 }
 
-type career struct {
-	Faculty  string `json:"Faculty"`
-	Career   string `json:"Career"`
+type updateCareerFact struct {
+    CareerId  int `json:"CareerId"`
+	Aptitude []string `json:"Aptitude"`
+	Skill    []string `json:"Skill"`
+	Interest []string `json:"Interest"`
+    PAptitude []string `json:"PAptitude"`
+    PSkill      []string `json:"PSkill"`
+    PInterest   []string `json:"PInterest"`
+}
+
+type deleteCareer struct {
+    CareerId  int `json:"CareerId"`
+}
+
+type careerFaculty struct {
+    Faculty  string `json:"Faculty"`
+    Career  string `json:"Career"`
 }
 
 func (s knowledgeServiceImpl) GetFacts(c *gin.Context) {
@@ -63,7 +85,29 @@ func (s knowledgeServiceImpl) AddFact(c *gin.Context) {
         return
     }
 
-    rows, err := s.repo.AddFact(career.Faculty, career.Career, career.Aptitude, career.Skill, career.Interest)
+    rows, err := s.repo.AddFact(career.CareerId, career.Aptitude, career.Skill, career.Interest)
+
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("%v", err)})
+        return
+	}
+
+    c.JSON(http.StatusOK, gin.H{"rows": rows })
+
+    // c.String(http.StatusOK, fmt.Sprintf("fact added, rows inserted: %d", rows))
+}
+
+
+func (s knowledgeServiceImpl) AddCareer(c *gin.Context) {
+    var career careerFaculty
+
+    if careerDataError := c.BindJSON(&career); careerDataError != nil {
+        fmt.Println(careerDataError)
+        c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("%v", careerDataError.Error())})
+        return
+    }
+
+    rows, err := s.repo.AddCareer(career.Faculty, career.Career)
 
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("%v", err)})
@@ -76,7 +120,7 @@ func (s knowledgeServiceImpl) AddFact(c *gin.Context) {
 }
 
 func (s knowledgeServiceImpl) DeleteFact(c *gin.Context) {
-    var career career
+    var career deletFact
 
     if careerDataError := c.BindJSON(&career); careerDataError != nil {
         fmt.Println(careerDataError)
@@ -84,7 +128,7 @@ func (s knowledgeServiceImpl) DeleteFact(c *gin.Context) {
         return
     }
 
-    rows, err := s.repo.DeleteFact(career.Faculty, career.Career)
+    rows, err := s.repo.DeleteFact(career.CareerId, career.Aptitude, career.Skill, career.Interest)
 
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("%v", err)})
@@ -96,7 +140,7 @@ func (s knowledgeServiceImpl) DeleteFact(c *gin.Context) {
 }
 
 func (s knowledgeServiceImpl) UpdateFact(c *gin.Context) {
-    var career careerFact
+    var career updateCareerFact
 
     if careerDataError := c.BindJSON(&career); careerDataError != nil {
         fmt.Println(careerDataError)
@@ -104,7 +148,27 @@ func (s knowledgeServiceImpl) UpdateFact(c *gin.Context) {
         return
     }
 
-    rows, err := s.repo.UpdateFact(career.Faculty, career.Career, career.Aptitude, career.Skill, career.Interest)
+    rows, err := s.repo.UpdateFact(career.CareerId, career.Aptitude, career.Skill, career.Interest, career.PAptitude, career.PSkill, career.PInterest)
+
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("%v", err)})
+        return
+	}
+
+    // c.String(http.StatusOK, fmt.Sprintf("fact added, rows inserted: %d", rows))
+    c.JSON(http.StatusOK, gin.H{"rows": rows })
+}
+
+func (s knowledgeServiceImpl) DeleteCareer(c *gin.Context) {
+    var career deleteCareer
+
+    if careerDataError := c.BindJSON(&career); careerDataError != nil {
+        fmt.Println(careerDataError)
+        c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("%v", careerDataError.Error())})
+        return
+    }
+
+    rows, err := s.repo.DeleteCareer(career.CareerId)
 
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("%v", err)})
