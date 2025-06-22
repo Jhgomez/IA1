@@ -3,9 +3,10 @@ package knowledgesource
 import (
 	// "os"
 	"sync"
-	"fmt"
+	// "fmt"
 
 	"github.com/mndrix/golog"
+	"github.com/mndrix/golog/term"
 )
 
 type careerDto struct {
@@ -16,14 +17,14 @@ type careerDto struct {
 type CareerFactDto struct {
 	Faculty string
 	Career string
-	Aptitude string
-	Skill string
-	Interest string
+	Aptitude []string
+	Skill []string
+	Interest []string
 }
 
 type Knowledge interface {
-	LoadCareerFacts(facts []CareerFactDto)
-	SuggestCareers(interest, aptitude, skill string) []CareerFactDto
+	LoadCareerFact(fact string)
+	SuggestCareers(query string) []term.Bindings
 	StartNewMachine()
 	LoadRule(rule string)
 }
@@ -45,103 +46,80 @@ func GetKnowledgeSource() Knowledge {
 	return knowledge
 }
 
-func (k *knowledgeImpl) SuggestCareers(aptitude, skill, interest string) []CareerFactDto {
-	query := fmt.Sprintf("career(Faculty, Career, %s, %s, %s).", aptitude, skill, interest)
-	results := []CareerFactDto{}
-
-	
-
-	solutions := k.Machine.ProveAll(query)
-
-	for _, solution := range solutions {
-		aptitude := aptitude
-		skill := skill
-		interest := interest
-
-		faculty := solution.ByName_("Faculty").String()
-		career := solution.ByName_("Career").String()
-		
-		if (aptitude == "Aptitude") {
-			aptitude = solution.ByName_("Aptitude").String()
-		}
-
-		if (skill == "Skill"){
-			skill = solution.ByName_("Skill").String()
-		}
-
-		if (interest == "Interest") {
-			interest = solution.ByName_("Interest").String()
-		}
-
-		results = append(results, CareerFactDto{Faculty: faculty, Career: career, Aptitude: aptitude, Skill: skill, Interest: interest})
-	}
-
-	return results
+func (k *knowledgeImpl) SuggestCareers(query string) []term.Bindings {
+	return k.Machine.ProveAll(query)
 }
 
 func (k *knowledgeImpl) StartNewMachine() {
 	k.Machine = golog.NewMachine()
 }
 
-func (k *knowledgeImpl) LoadCareerFacts(facts []CareerFactDto) {
-	// knowledgeBase, err := os.ReadFile(url)
-
-	// 	if err != nil {
-	// 		panic(err)
-	// 	}
-	for _, fact := range facts {
-		k.Machine = k.Machine.Consult(fmt.Sprintf("career(%s, %s, %s, %s, %s).", fact.Faculty, fact.Career, fact.Aptitude, fact.Skill, fact.Interest))	
-	}
-
-	fmt.Println(facts)
+func (k *knowledgeImpl) LoadCareerFact(fact string) {
+	k.Machine = k.Machine.Consult(fact)
 }
 
 func (k *knowledgeImpl) LoadRule(rule string) {
 	k.Machine = k.Machine.Consult(rule)
 }
 
-
 // func main() {
-// 	source1 := GetKnowledgeSource()
+// // 	source1 := GetKnowledgeSource()
 
-// 	source1.LoadCareerFacts([]CareerFactDto{CareerFactDto{"a", "b", "c", "d", "e"}})
+// // 	source1.LoadCareerFacts([]CareerFactDto{CareerFactDto{"a", "b", "c", "d", "e"}})
 
-// 	// source1.LoadRule("suggested_career(Faculty, Career, Aptitude, Skill, Interest) :- career(Faculty, Career, Aptitude, Skill, Interest).")
+// // 	// source1.LoadRule("suggested_career(Faculty, Career, Aptitude, Skill, Interest) :- career(Faculty, Career, Aptitude, Skill, Interest).")
 
-// 	fmt.Println(source1.SuggestCareers("c", "d", "e"))
+// // 	fmt.Println(source1.SuggestCareers("c", "d", "e"))
 
-// //  ptr = (*int)(unsafe.Pointer(uintptr(unsafe.Pointer(ptr)) + uintptr(unsafe.Sizeof(arr[0]))))
-// //  fmt.Println(*ptr) // output: 2
+// // //  ptr = (*int)(unsafe.Pointer(uintptr(unsafe.Pointer(ptr)) + uintptr(unsafe.Sizeof(arr[0]))))
+// // //  fmt.Println(*ptr) // output: 2
 
-// 	source1.StartNewMachine()
+// // 	source1.StartNewMachine()
 
-// 	source1.LoadCareerFacts([]CareerFactDto{CareerFactDto{"f", "g", "h", "i", "j"}})
-
-
-// 	// source1.LoadRule("suggested_career(Faculty, Career, Aptitude, Skill, Interest) :- career(Faculty, Career, Aptitude, Skill, Interest).")
-
-// 	fmt.Println(source1.SuggestCareers("h", "_", "_"))
+// // 	source1.LoadCareerFacts([]CareerFactDto{CareerFactDto{"f", "g", "h", "i", "j"}})
 
 
+// // 	// source1.LoadRule("suggested_career(Faculty, Career, Aptitude, Skill, Interest) :- career(Faculty, Career, Aptitude, Skill, Interest).")
+
+// // 	fmt.Println(source1.SuggestCareers("h", "_", "_"))
 
 
 
-	// source := golog.NewMachine()
 
-	// source = source.Consult("career(a, b, c, d, e).")
-	// source = source.Consult("suggested_career(Faculty, Career, Aptitude, Skill, Interest) :- career(Faculty, Career, Aptitude, Skill, Interest).")
 
-	// results := []careerDto{}
+// 	source := golog.NewMachine()
 
-	// solutions := source.ProveAll("career(Faculty, Career, c, d, e).")
+// 	source = source.Consult(prologProgram)
+	
+// 	query := `match_all_careers(
+//     ['Problem Solving', 'Creativity'],
+//     ['Programming', 'Communication'],
+//     ['Technology', 'Design'],
+//     Faculty, Career,
+//     A, S, I,
+//     AT, ST, IT).`
 
-	// for _, solution := range solutions {
-	// 	faculty := solution.ByName_("Faculty").String()
-	// 	career := solution.ByName_("Career").String()
 
-	// 	results = append(results, careerDto{Faculty: faculty, Career: career})
-	// }
 
-	// fmt.Println(results)
+// 	// results := []careerDto{}
+
+// 	solutions := source.ProveAll(query)
+
+// 	for _, solution := range solutions {
+// 	// 	faculty := solution.ByName_("Faculty").String()
+// 	// 	career := solution.ByName_("Career").String()
+
+// 	// 	results = append(results, careerDto{Faculty: faculty, Career: career})
+
+// 		// bindings := solution.Bindings()
+//     fmt.Printf("Faculty: %v\n", solution.ByName_("Faculty"))
+//     fmt.Printf("Career: %v\n", solution.ByName_("Career"))
+//     fmt.Printf("Aptitude Matches:  %v/%v\n\n", solution.ByName_("A"), solution.ByName_("AT"))
+//     fmt.Printf("Skill Matches:  %v/%v\n\n", solution.ByName_("S"), solution.ByName_("ST"))
+//     fmt.Printf("Interest Matches: %v/%v\n\n", solution.ByName_("I"), solution.ByName_("IT"))
+//     fmt.Println("------------------------")
+// 	}
+
+// 	// fmt.Println(results)
 // }
 
