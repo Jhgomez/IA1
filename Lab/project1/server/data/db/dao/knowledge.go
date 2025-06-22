@@ -2,6 +2,7 @@ package knowledgedao
 
 import (
 	"fmt"
+    "errors"
 
 	"database/sql"
 
@@ -47,7 +48,6 @@ func GetKnowledgeDao() KnowledgeDao {
 
 func (k knowledgeDaoImpl) GetFacts() ([]careerDto, error) {
     db := k.db.GetConnection()
-	defer db.Close()
 
 	// Step 1: Get all careers
 	rows, err := db.Query(`
@@ -140,7 +140,7 @@ func (k knowledgeDaoImpl) GetFacts() ([]careerDto, error) {
 
 func (k knowledgeDaoImpl) UpdateFact(careerId int, Aptitude, Skill, Interest, PAptitude, PSkill, PInterest []string) (int64, error) {
     conn := k.db.GetConnection()
-    defer conn.Close()
+    
 
     for i, aptitude := range Aptitude {
         stmt, err := conn.Prepare("UPDATE proyecto1.aptitude SET Aptitude = @Aptitude, WHERE CareerId = @CareerId AND Aptitude = @PAptitude;")
@@ -226,7 +226,7 @@ func (k knowledgeDaoImpl) UpdateFact(careerId int, Aptitude, Skill, Interest, PA
 func (k knowledgeDaoImpl) AddFact(careerId int, Aptitude, Skill, Interest []string) (int64, error) {
 
     conn := k.db.GetConnection()
-    defer conn.Close()
+    
 
     for aptitude := range Aptitude {
         stmt, err := conn.Prepare("INSERT INTO proyecto1.aptitude(CareerId, Aptitude) VALUES (@CareerId, @Aptitude);")
@@ -483,8 +483,7 @@ func (k knowledgeDaoImpl) AddCareer(Faculty, Career string) (int64, error) {
     if err != nil {
         return -1, err
     }
-
-    defer conn.Close()
+   
     defer stmt.Close()
 
     // Execute the prepared statement
@@ -493,16 +492,31 @@ func (k knowledgeDaoImpl) AddCareer(Faculty, Career string) (int64, error) {
         sql.Named("Career", Career),
     )
     if err != nil {
-        return 0, err
+        return -1, err
     }
 
     // Get the number of row inserted
-    rowInserted, err := result.RowsAffected()
+    _, err = result.RowsAffected()
     if err != nil {
-        return 0, err
+        return -1, err
     }
 
-    return rowInserted, nil
+    var careerId int
+
+    err = conn.QueryRow(
+        "SELECT CareerId FROM proyecto1.careers WHERE Faculty = @Faculty AND Career = @Career);",
+        Faculty,
+        Career,
+    ).Scan(&careerId)
+
+    if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return -1, fmt.Errorf("career not found for faculty '%s' and career '%s'", Faculty, Career)
+		}
+		return -1, fmt.Errorf("failed to query CareerId: %w", err)
+	}
+
+    return int64(careerId), nil
 }
 
 // func main() {
