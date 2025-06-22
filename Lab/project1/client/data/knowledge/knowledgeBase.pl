@@ -30,3 +30,29 @@ career(arquitectura, arquitectura, creatividad, diseno espacial, urbanizacion).
 
 % Rules
 suggested career(Faculty, Career, Aptitude, Skill, Interest) :- career(Faculty, Career, Aptitude, Skill, Interest).
+
+
+
+
+
+career(ingenieria, quimica, pensamiento analitico, simulacion, medio ambiente)
+career(ingenieria, electrica, creatividad tecnica, automatizacion, energias renovables)
+career(ingenieria, mecanica, perseverancia, manufactura, innovacion)
+career(ingenieria, sistemas, adaptabilidad, ciberseguridad, inteligencia artificial)
+career(ingenieria, civil, organizacion espacial, topografia, infraestructura)
+
+career(medicina, medicina general, empatia clinica, diagnostico, bienestar comun)
+career(medicina, nutricion, curiosidad cientifica, planificacion alimentaria, habitos saludables)
+career(medicina, enfermeria, compromiso, manejo de pacientes, salud mental)
+
+career(humanidades, filosofia, pensamiento abstracto, debate, etica)
+career(humanidades, psicologia, intuicion, evaluacion psicologica, relaciones humanas)
+career(humanidades, sociologia, sensibilidad social, recoleccion de datos, equidad)
+
+career(economica, administracion, iniciativa, gestion de proyectos, emprendimiento)
+career(economica, economia, pensamiento logico, modelado economico, politica publica)
+career(economica, contaduria, responsabilidad, auditoria, cumplimiento fiscal)
+
+career(derecho, derecho, analisis juridico, argumentacion legal, derechos humanos)
+
+career(arquitectura, arquitectura, sensibilidad estetica, maquetado, sostenibilidad)

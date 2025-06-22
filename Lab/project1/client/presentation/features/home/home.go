@@ -35,9 +35,9 @@ func HomeScreen() fyne.CanvasObject {
 	studentBtn := widget.NewButtonWithIcon("Student", theme.AccountIcon(), func() {
 		navigation.NavigateWithNewWindow(
 			"Formulary",  //windowTitle
-			student.StudenFirstFormulary(),  //content
+			student.StudentFirstFormulary(),  //content
 			true, // shouldHide
-			fyne.NewSize(700, 500), // windows size
+			fyne.NewSize(900, 500), // windows size
 			nil, // onClose
 		)
 	})
