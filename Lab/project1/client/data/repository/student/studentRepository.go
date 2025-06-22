@@ -5,6 +5,8 @@ import (
 	"sync"
 	"strings"
 	"strconv"
+	"maps"
+	"slices"
 
  	"unimatch/data/knowledge"
 	// "unimatch/data/repository/knowledge"
@@ -20,7 +22,7 @@ type Career struct {
 }
 
 type StudentRepository interface {
-	SuggestCareers(Aptitude, Skill, Interest []string) map[string]*Career
+	SuggestCareers(Aptitude, Skill, Interest []string) []*Career
 }
 
 type studentRepositoryImpl struct {
@@ -40,7 +42,7 @@ func GetStudentRepository() StudentRepository {
 	return studentRepo
 }
 
-func (s studentRepositoryImpl) SuggestCareers(Aptitude, Skill, Interest []string) map[string]*Career {
+func (s studentRepositoryImpl) SuggestCareers(Aptitude, Skill, Interest []string) []*Career {
 	careers := make(map[string]*Career)
 
 	// A stands for Aptitudes
@@ -109,7 +111,7 @@ func (s studentRepositoryImpl) SuggestCareers(Aptitude, Skill, Interest []string
 		// fmt.Println("------------------------")
 	}
 
-	return careers
+	return slices.Collect(maps.Values(careers))
 }
 
 func(r studentRepositoryImpl) formatPrologList(items []string) string {
