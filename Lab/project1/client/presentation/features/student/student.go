@@ -8,6 +8,7 @@ import (
 	"bytes"
 	"image"
 	"image/png"
+	"sort"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
@@ -569,8 +570,25 @@ func chartScreen(Aptitude, Skill, Interest []string) fyne.CanvasObject {
 
 	careerCharts := []fyne.CanvasObject{facultyImg}
 
-	for _, c := range careers {
-		label := widget.NewLabel(c.Career + " - " + c.Faculty)
+	fmt.Println(len(careers))
+
+	// Sort descending by TotalMatch
+	sort.Slice(careers, func(i, j int) bool {
+		return careers[i].TotalMatch > careers[j].TotalMatch
+	})
+
+	if len(careers) > 6 {
+		careers = careers[:6]
+	}
+
+	fmt.Println(len(careers))
+
+	for i, c := range careers {
+		if i > 5 {
+			continue
+		}
+
+		label := widget.NewLabel(fmt.Sprintf("%s - %s, %v%", c.Faculty, c.Career, c.TotalMatch))
 		img := canvas.NewImageFromImage(createCareerBarChart(c))
 		img.FillMode = canvas.ImageFillOriginal
 
