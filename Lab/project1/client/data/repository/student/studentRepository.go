@@ -100,7 +100,7 @@ func (s studentRepositoryImpl) SuggestCareers(Aptitude, Skill, Interest []string
 				AptitudeMatch: AptitudeMatch,
 				SkillMatch: SkillMatch,
 				InterestMatch: InterestMatch,
-				TotalMatch: (AptitudeMatch + SkillMatch + InterestMatch) / 300,
+				TotalMatch: ((AptitudeMatch + SkillMatch + InterestMatch) / 3)*100,
 			}
 		}
 
