@@ -19,6 +19,7 @@ type Career struct {
 	AptitudeMatch 	float32
 	SkillMatch    	float32
 	InterestMatch 	float32
+	TotalMatch      float32
 }
 
 type StudentRepository interface {
@@ -99,6 +100,7 @@ func (s studentRepositoryImpl) SuggestCareers(Aptitude, Skill, Interest []string
 				AptitudeMatch: AptitudeMatch,
 				SkillMatch: SkillMatch,
 				InterestMatch: InterestMatch,
+				TotalMatch: (AptitudeMatch + SkillMatch + InterestMatch) / 300,
 			}
 		}
 
