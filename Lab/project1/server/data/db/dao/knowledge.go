@@ -143,7 +143,7 @@ func (k knowledgeDaoImpl) UpdateFact(careerId int, Aptitude, Skill, Interest, PA
     
 
     for i, aptitude := range Aptitude {
-        stmt, err := conn.Prepare("UPDATE proyecto1.aptitude SET Aptitude = @Aptitude, WHERE CareerId = @CareerId AND Aptitude = @PAptitude;")
+        stmt, err := conn.Prepare("UPDATE proyecto1.aptitude SET Aptitude = @Aptitude WHERE CareerId = @CareerId AND Aptitude = @PAptitude;")
         if err != nil {
             return 0, err
         }
@@ -169,7 +169,7 @@ func (k knowledgeDaoImpl) UpdateFact(careerId int, Aptitude, Skill, Interest, PA
     }
 
     for i, skill := range Skill {
-        stmt, err := conn.Prepare("UPDATE proyecto1.skill SET Skill = @Skill, WHERE CareerId = @CareerId AND Skill = @PSkill;")
+        stmt, err := conn.Prepare("UPDATE proyecto1.skill SET Skill = @Skill WHERE CareerId = @CareerId AND Skill = @PSkill;")
         if err != nil {
             return 0, err
         }
@@ -195,7 +195,7 @@ func (k knowledgeDaoImpl) UpdateFact(careerId int, Aptitude, Skill, Interest, PA
     }
 
     for i, interest := range Interest {
-        stmt, err := conn.Prepare("UPDATE proyecto1.interest SET Interest = @Interest, WHERE CareerId = @CareerId AND Interest = @PInterest;")
+        stmt, err := conn.Prepare("UPDATE proyecto1.interest SET Interest = @Interest WHERE CareerId = @CareerId AND Interest = @PInterest;")
         if err != nil {
             return 0, err
         }
@@ -397,7 +397,7 @@ func (k knowledgeDaoImpl) DeleteCareer(careerId int) (int64, error) {
 func (k knowledgeDaoImpl) DeleteFact(careerId int, Aptitude, Skill, Interest string) (int64, error) {
 
     conn := k.db.GetConnection()
-    conn.Close()
+    // conn.Close()
 
     if Aptitude != "" {
         stmt, err := conn.Prepare("DELETE FROM proyecto1.aptitude WHERE CareerId = @CareerId AND Aptitude = @Aptitude;")
