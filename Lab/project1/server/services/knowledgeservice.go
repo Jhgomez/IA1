@@ -11,10 +11,10 @@ import (
 
 type KnowledgeService interface {
     GetFacts(c *gin.Context) // gets all careers
-    AddFact(c *gin.Context)   // add facts should be used in combination with "AddCareer" if adding a new career
+    AddFact(c *gin.Context)   // "careerFact", add facts(aptitude, skill, interest), should be used in combination with "AddCareer" if adding a new career
     AddCareer(c *gin.Context) // Adds a career without any aptitude, skill nor interest
-    DeleteFact(c *gin.Context) // Deletes a single aptitude and/or skill and/or interest
-    UpdateFact(c *gin.Context)   // updates a career's aptitude, skill nor interest but it needs a list of new aptitude, skill nor interest and the old aptitude, skill nor interest
+    DeleteFact(c *gin.Context) // "deletFact" Deletes a single aptitude and/or skill and/or interest
+    UpdateFact(c *gin.Context)   // "updateCareerFact" updates a career's aptitude, skill and interest but it needs a list of new aptitude, skill nor interest and the old aptitude, skill nor interest
     DeleteCareer(c *gin.Context) // Deletes a career along with all aptitude, skill nor interest
 }
 
@@ -73,6 +73,8 @@ func (s knowledgeServiceImpl) GetFacts(c *gin.Context) {
         return
     }
 
+    fmt.Println(facts)
+    
     c.JSON(http.StatusOK, facts)
 }
 
@@ -114,7 +116,7 @@ func (s knowledgeServiceImpl) AddCareer(c *gin.Context) {
         return
 	}
 
-    c.JSON(http.StatusOK, gin.H{"rows": rows })
+    c.JSON(http.StatusOK, gin.H{"CareerId": rows })
 
     // c.String(http.StatusOK, fmt.Sprintf("fact added, rows inserted: %d", rows))
 }
