@@ -73,7 +73,7 @@ func (s knowledgeServiceImpl) GetFacts(c *gin.Context) {
         return
     }
 
-    fmt.Println(facts)
+    // fmt.Println(facts)
     
     c.JSON(http.StatusOK, facts)
 }
