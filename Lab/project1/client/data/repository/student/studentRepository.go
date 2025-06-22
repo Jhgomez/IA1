@@ -3,22 +3,24 @@ package studentrepo
 import (
 	"fmt"
 	"sync"
+	"strings"
+	"strconv"
 
  	"unimatch/data/knowledge"
-	// "unimatch/data/repository/home"
+	// "unimatch/data/repository/knowledge"
+	// "unimatch/data/repository/admin"
 )
 
 type Career struct {
 	Faculty  		string
 	Career   		string
-	Aptitude 		string
-	Skill    		string
-	Interest 		string
-	Compatibility	float32
+	AptitudeMatch 	float32
+	SkillMatch    	float32
+	InterestMatch 	float32
 }
 
 type StudentRepository interface {
-	SuggestCareers(Aptitude1, Skill1, Interest1, Aptitude2, Skill2, Interest3 string) map[string]Career
+	SuggestCareers(Aptitude, Skill, Interest []string) map[string]*Career
 }
 
 type studentRepositoryImpl struct {
@@ -38,155 +40,108 @@ func GetStudentRepository() StudentRepository {
 	return studentRepo
 }
 
-func (s studentRepositoryImpl) SuggestCareers(Aptitude1, Skill1, Interest1, Aptitude2, Skill2, Interest2 string) map[string]Career {
-	suggestedCareers := make(map[string]Career)
+func (s studentRepositoryImpl) SuggestCareers(Aptitude, Skill, Interest []string) map[string]*Career {
+	careers := make(map[string]*Career)
 
-	// 33% compatibility
-	oneThirdCombinations := [][]string {
-		{Aptitude1, "Skill", "Interest"},
-		{Aptitude2, "Skill", "Interest"},
-		{Skill1, "Skill", "Interest"},
-		{Skill2, "Skill", "Interest"},
-		{Interest1, "Skill", "Interest"},
-		{Interest2, "Skill", "Interest"},
-
-		{"Aptitude", Aptitude1, "Interest"},
-		{"Aptitude", Aptitude2, "Interest"},
-		{"Aptitude", Skill1, "Interest"},
-		{"Aptitude", Skill2, "Interest"},
-		{"Aptitude", Interest1, "Interest"},
-		{"Aptitude", Interest2, "Interest"},
-
-		{"Aptitude", "Skill", Aptitude1},
-		{"Aptitude", "Skill", Aptitude2},
-		{"Aptitude", "Skill", Skill1},
-		{"Aptitude", "Skill", Skill2},
-		{"Aptitude", "Skill", Interest1},
-		{"Aptitude", "Skill", Interest2},
-	}
-
+	// A stands for Aptitudes
+	// AT stands for Aptitudes Total
+	// S stands for Skills
+	// ST stands for Skills Total
+	// I stands for Interests
+	// IT stands for Interests Total
 	
-	for _, suggestion := range s.getSuggestions(oneThirdCombinations, 33.33) {
-		suggestedCareers[suggestion.Faculty + suggestion.Career] = suggestion
-	}
+	queryString := fmt.Sprintf(
+			"match_all_careers(%s, %s, %s, Faculty, Career, A, S, I, AT, ST, IT).",
+			s.formatPrologList(Aptitude),
+			s.formatPrologList(Skill), 
+			s.formatPrologList(Interest),
+		)
+	
+	// fmt.Printf(queryString)
+	suggestions := s.knowledgeSource.SuggestCareers(queryString)
 
-	// 66.66% compatible
-	twoThirdCombinations := [][]string {
-		{Aptitude1, "Skill", Interest1},
-		{Aptitude2, "Skill", Interest1},
-		{Aptitude2, "Skill", Interest2},
-		{Aptitude1, "Skill", Interest2},
+	for _, solution := range suggestions {
+		faculty := solution.ByName_("Faculty").String()
+		career := solution.ByName_("Career").String()
 
-		{Interest1, "Skill", Aptitude1},
-		{Interest1, "Skill", Aptitude2},
-		{Interest2, "Skill", Aptitude2},
-		{Interest2, "Skill", Aptitude1},
-		{Interest2, "Skill", Aptitude1},
+		aptitudeCount, _ := strconv.ParseFloat(solution.ByName_("A").String(), 32)
+		skillCount, _ := strconv.ParseFloat(solution.ByName_("S").String(), 32)
+		interestCount, _ := strconv.ParseFloat(solution.ByName_("I").String(), 32)
 
-		{"Aptitude", Skill1, Interest1},
-		{"Aptitude", Skill2, Interest1},
-		{"Aptitude", Skill2, Interest2},
-		{"Aptitude", Skill1, Interest2},
+		skillTotalCount, _ := strconv.ParseFloat(solution.ByName_("ST").String(), 32)
+		interestTotalCount, _ := strconv.ParseFloat(solution.ByName_("IT").String(), 32)
+		aptitudeTotalCount, _ := strconv.ParseFloat(solution.ByName_("AT").String(), 32)
 
-		{"Aptitude", Interest1, Skill1},
-		{"Aptitude", Interest1, Skill2},
-		{"Aptitude", Interest2, Skill2},
-		{"Aptitude", Interest2, Skill1},
+		AptitudeMatch := float32(aptitudeCount / aptitudeTotalCount)
+		SkillMatch := float32(skillCount / skillTotalCount)
+		InterestMatch := float32(interestCount / interestTotalCount)
 
-		{Aptitude1, Skill1, "Interest"},
-		{Aptitude2, Skill1, "Interest"},
-		{Aptitude2, Skill2, "Interest"},
-		{Aptitude1, Skill2, "Interest"},
+		match, exists := careers[faculty+career]
 
-		{Skill1, Aptitude1, "Interest"},
-		{Skill2, Aptitude1, "Interest"},
-		{Skill2, Aptitude2, "Interest"},
-		{Skill1, Aptitude2, "Interest"},
-	}
+		if exists {
+			if match.AptitudeMatch < AptitudeMatch {
+				match.AptitudeMatch = AptitudeMatch
+			}
 
-	for _, suggestion := range s.getSuggestions(twoThirdCombinations, 66.67) {
-		suggestedCareers[suggestion.Faculty + suggestion.Career] = suggestion
-	}
+			if match.SkillMatch < SkillMatch {
+				match.SkillMatch = SkillMatch
+			}
 
-	// 100% compatible careers
-	combinations := [][]string{
-		{Aptitude1, Skill1, Interest1}, 
-		{Aptitude1, Skill1, Interest2},
-		{Aptitude1, Skill2, Interest1}, 
-		{Aptitude1, Skill2, Interest2}, 
-		{Aptitude2, Skill2, Interest2}, 
-		{Aptitude2, Skill2, Interest1}, 
-		{Aptitude2, Skill1, Interest2}, 
-		{Aptitude2, Skill1, Interest1},
-
-		{Aptitude1, Interest1, Skill1}, 
-		{Aptitude1, Interest2, Skill1},
-		{Aptitude1, Interest1, Skill2}, 
-		{Aptitude1, Interest2, Skill2}, 
-		{Aptitude2, Interest2, Skill2}, 
-		{Aptitude2, Interest1, Skill2}, 
-		{Aptitude2, Interest2, Skill1}, 
-		{Aptitude2, Interest1, Skill1},
-
-		{Skill1, Interest1, Aptitude1}, 
-		{Skill1, Interest2, Aptitude1},
-		{Skill2, Interest1, Aptitude1}, 
-		{Skill2, Interest2, Aptitude1}, 
-		{Skill2, Interest2, Aptitude2}, 
-		{Skill2, Interest1, Aptitude2}, 
-		{Skill1, Interest2, Aptitude2}, 
-		{Skill1, Interest1, Aptitude2},
-
-		{Interest1, Aptitude1, Skill1}, 
-		{Interest2, Aptitude1, Skill1},
-		{Interest1, Aptitude1, Skill2}, 
-		{Interest2, Aptitude1, Skill2}, 
-		{Interest2, Aptitude2, Skill2}, 
-		{Interest1, Aptitude2, Skill2}, 
-		{Interest2, Aptitude2, Skill1}, 
-		{Interest1, Aptitude2, Skill1},
-
-		{Interest1, Skill1, Aptitude1}, 
-		{Interest2, Skill1, Aptitude1},
-		{Interest1, Skill2, Aptitude1}, 
-		{Interest2, Skill2, Aptitude1}, 
-		{Interest2, Skill2, Aptitude2}, 
-		{Interest2, Skill1, Aptitude2}, 
-		{Interest1, Skill2, Aptitude2}, 
-		{Interest1, Skill1, Aptitude2},
-
-		{Skill1, Aptitude1, Interest1}, 
-		{Skill1, Aptitude1, Interest2},
-		{Skill2, Aptitude1, Interest1}, 
-		{Skill2, Aptitude1, Interest2}, 
-		{Skill2, Aptitude2, Interest2}, 
-		{Skill2, Aptitude2, Interest1}, 
-		{Skill1, Aptitude2, Interest2}, 
-		{Skill1, Aptitude2, Interest1},
-	}
-
-	for _, suggestion := range s.getSuggestions(combinations, 100) {
-		suggestedCareers[suggestion.Faculty + suggestion.Career] = suggestion
-	}
-
-	return suggestedCareers
-}
-
-func (s studentRepositoryImpl) getSuggestions(queriesData [][]string, compatibility float32) []Career {
-	careers := []Career{}
-	for _, queryData := range queriesData {
-
-		suggestions := s.knowledgeSource.SuggestCareers(queryData[0], queryData[1], queryData[2])
-
-		for _, suggestion := range suggestions {
-			careers = append(careers, Career{Faculty: suggestion.Faculty, Career: suggestion.Career, Aptitude: suggestion.Aptitude, Skill: suggestion.Skill, Interest: suggestion.Interest, Compatibility: compatibility})
+			if match.InterestMatch < InterestMatch {
+				match.InterestMatch = InterestMatch
+			}
+		} else {
+			careers[faculty+career] = &Career{
+				Faculty: faculty,
+				Career: career,
+				AptitudeMatch: AptitudeMatch,
+				SkillMatch: SkillMatch,
+				InterestMatch: InterestMatch,
+			}
 		}
+
+		// bindings := solution.Bindings()
+		// fmt.Printf("Faculty: %v\n", solution.ByName_("Faculty"))
+		// fmt.Printf("Career: %v\n", solution.ByName_("Career"))
+		// fmt.Printf("Aptitude Matches:  %s/%s\n", solution.ByName_("A"), solution.ByName_("AT"))
+		// fmt.Printf("Skill Matches:  %s/%s\n", solution.ByName_("S"), solution.ByName_("ST"))
+		// fmt.Printf("Interest Matches: %s/%s\n", solution.ByName_("I"), solution.ByName_("IT"))
+		// fmt.Println("------------------------")
 	}
-	
+
 	return careers
 }
 
+func(r studentRepositoryImpl) formatPrologList(items []string) string {
+	var quoted []string
+
+	for _, item := range items {
+		str := fmt.Sprintf("%v", item) // safely convert anything to string
+		quoted = append(quoted, fmt.Sprintf("'%s'", str))
+	}
+
+	return "[" + strings.Join(quoted, ", ") + "]"
+}
+
 // func main() {
-// 	homerepo.GetHomeRepo().LoadKnowledgeBase()
-// 	fmt.Println(GetStudentRepository().SuggestCareers("matematica", "dibujo", "construccion", "k", "k", "k"))
+	
+// 	// repoAdmin := adminrepo.GetAdminRepository()
+
+// 	// repoAdmin.AddCareer("a", "b", "c", "d", "f")
+// 	// repoAdmin.AddCareer("a", "b", "f", "g", "h")
+// 	// repoAdmin.AddCareer("a", "b", "i", "j", "k")
+
+// 	repo := knowledgerepo.GetKnowledgeRepo()
+
+// 	repo.LoadKnowledgeBase()
+
+// 	// println(repoAdmin.GetCareers())
+
+// 	srepo := GetStudentRepository()
+
+// 	fmt.Printf("%v", )
+
+// 	for key, val := range srepo.SuggestCareers([]string{"analisis"}, []string{"laboratorio"}, []string{"procesos industriales"}) {
+// 		fmt.Printf("Key: %s, Score: %v\n", key, val)
+// 	}
 // }
