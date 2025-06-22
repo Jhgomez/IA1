@@ -13,19 +13,22 @@ import (
 
 type API interface {
 	GetFacts() ([]FactDto, error)
-	AddFact(Faculty, Career, Aptitude, Skill, Interest string) (int, error)
-	DeleteFact(Faculty, Career string) (int, error)
-	UpdateFact(Faculty, Career, Aptitude, Skill, Interest string) (int, error)
+	AddFact(careerId int, Aptitude, Skill, Interest []string) (int, error)
+	AddCareer(Faculty, Career string) (int, error)
+	DeleteFact(careerId int, Aptitude, Skill, Interest string) (int, error)
+	UpdateFact(careerId int, Aptitude, Skill, Interest, PAptitude, PSkill, PInterest []string) (int, error)
+    DeleteCareer(careerId int) (int, error)
 }
 
 type apiImpl struct {}
 
 type FactDto struct {
+    CareerId int	`json:"CareerId"`
 	Faculty  string `json:"Faculty"`
 	Career   string `json:"Career"`
-	Aptitude string `json:"Aptitude"`
-	Skill    string `json:"Skill"`
-	Interest string `json:"Interest"`
+	Aptitude []string `json:"Aptitude"`
+	Skill    []string `json:"Skill"`
+	Interest []string `json:"Interest"`
 }
 
 type apiErrorMessage struct {
@@ -82,11 +85,67 @@ func (a apiImpl) GetFacts() ([]FactDto, error) {
 
 }
 
-func (a apiImpl) AddFact(Faculty, Career, Aptitude, Skill, Interest string) (int, error) {
+func (a apiImpl) AddCareer(Faculty, Career string) (int, error) {
 	// response, err := http.Post(fmt.Sprintf("%s/getFatcs", localDbSubstituteServer), "application/json", bytes.NewBuffer(courseJson) )
-	careerFact := FactDto{Faculty, Career, Aptitude, Skill, Interest}
+	dataJson := make(map[string]interface{})
 
-	postJson, err := json.Marshal(careerFact)
+	dataJson["Faculty"] = Faculty
+	dataJson["Career"] = Career
+
+	postJson, err := json.Marshal(dataJson)
+
+	response, err := http.Post(fmt.Sprintf("%s/addCareer", localDbSubstituteServer), "application/json", bytes.NewBuffer(postJson))
+
+    if err != nil {
+		fmt.Printf("error in post %v", err)
+        return -1, err
+    }
+
+	defer response.Body.Close()
+
+    body, err := io.ReadAll(response.Body)
+
+    if err != nil {
+		fmt.Printf("error reading body %v", err)
+        return -1, err
+    }
+
+	// Check the status code
+	err = checkResponseCode(response, body)
+
+	if err != nil {
+		return -1, err
+	}
+
+	var data map[string]interface{}
+
+	err = json.Unmarshal(body, &data)
+
+    if err != nil {
+		fmt.Printf("error parsing to object %v\n", err)
+		return -1, err
+	}
+
+	num, err := strconv.Atoi(fmt.Sprintf("%v",(data["CareerId"])))
+
+	if err != nil {
+		fmt.Printf("error parsing careerId %v\n", err)
+		return -1, err
+	}
+
+	return num, nil
+}
+
+func (a apiImpl) AddFact(careerId int, Aptitude, Skill, Interest []string) (int, error) {
+	// response, err := http.Post(fmt.Sprintf("%s/getFatcs", localDbSubstituteServer), "application/json", bytes.NewBuffer(courseJson) )
+	dataJson := make(map[string]interface{})
+
+	dataJson["CareerId"] = careerId
+	dataJson["Aptitude"] = Aptitude
+	dataJson["Skill"] = Skill
+	dataJson["Interest"] = Interest
+
+	postJson, err := json.Marshal(dataJson)
 
 	response, err := http.Post(fmt.Sprintf("%s/addFact", localDbSubstituteServer), "application/json", bytes.NewBuffer(postJson))
 
@@ -130,12 +189,14 @@ func (a apiImpl) AddFact(Faculty, Career, Aptitude, Skill, Interest string) (int
 	return num, nil
 }
 
-func (a apiImpl) DeleteFact(Faculty, Career string) (int, error) {
+func (a apiImpl) DeleteFact(careerId int, Aptitude, Skill, Interest string) (int, error) {
 	// response, err := http.Post(fmt.Sprintf("%s/getFatcs", localDbSubstituteServer), "application/json", bytes.NewBuffer(courseJson) )
 	dataJson := make(map[string]interface{})
 
-	dataJson["Faculty"] = Faculty
-	dataJson["Career"] = Career
+	dataJson["CareerId"] = careerId
+	dataJson["Aptitude"] = Aptitude
+	dataJson["Skill"] = Skill
+	dataJson["Interest"] = Interest
 	// data["List_Of_SOmething"] = []string{"Math"}  this is how to define a parse an object to a Json without an actual struct
 
 	postJson, err := json.Marshal(dataJson)
@@ -182,13 +243,72 @@ func (a apiImpl) DeleteFact(Faculty, Career string) (int, error) {
 	return num, nil
 }
 
-func (a apiImpl) UpdateFact(Faculty, Career, Aptitude, Skill, Interest string) (int, error) {
+func (a apiImpl) UpdateFact(careerId int, Aptitude, Skill, Interest, PAptitude, PSkill, PInterest []string) (int, error) {
 	// response, err := http.Post(fmt.Sprintf("%s/getFatcs", localDbSubstituteServer), "application/json", bytes.NewBuffer(courseJson) )
-	careerFact := FactDto{Faculty, Career, Aptitude, Skill, Interest}
+	dataJson := make(map[string]interface{})
 
-	postJson, err := json.Marshal(careerFact)
+	dataJson["CareerId"] = careerId
+	dataJson["Aptitude"] = Aptitude
+	dataJson["Skill"] = Skill
+	dataJson["Interest"] = Interest
+	dataJson["PAptitude"] = PAptitude
+	dataJson["PSkill"] = PSkill
+	dataJson["PInterest"] = PInterest
+
+	postJson, err := json.Marshal(dataJson)
 
 	response, err := http.Post(fmt.Sprintf("%s/updateFact", localDbSubstituteServer), "application/json", bytes.NewBuffer(postJson))
+
+    if err != nil {
+		fmt.Printf("error in post %v", err)
+        return -1, err
+    }
+
+	defer response.Body.Close()
+
+    body, err := io.ReadAll(response.Body)
+
+    if err != nil {
+		fmt.Printf("error reading body %v", err)
+        return -1, err
+    }
+
+	// Check the status code
+	err = checkResponseCode(response, body)
+
+	if err != nil {
+		return -1, err
+	}
+
+	var data map[string]interface{}
+
+	err = json.Unmarshal(body, &data)
+
+    if err != nil {
+		fmt.Printf("error parsing to object %v\n", err)
+		return -1, err
+	}
+
+	num, err := strconv.Atoi(fmt.Sprintf("%v",(data["rows"])))
+
+	if err != nil {
+		fmt.Printf("error parsing rows %v\n", err)
+		return -1, err
+	}
+
+	return num, nil
+}
+
+func (a apiImpl) DeleteCareer(careerId int) (int, error) {
+	// response, err := http.Post(fmt.Sprintf("%s/getFatcs", localDbSubstituteServer), "application/json", bytes.NewBuffer(courseJson) )
+	dataJson := make(map[string]interface{})
+
+	dataJson["CareerId"] = careerId
+	// data["List_Of_SOmething"] = []string{"Math"}  this is how to define a parse an object to a Json without an actual struct
+
+	postJson, err := json.Marshal(dataJson)
+
+	response, err := http.Post(fmt.Sprintf("%s/deleteCareer", localDbSubstituteServer), "application/json", bytes.NewBuffer(postJson))
 
     if err != nil {
 		fmt.Printf("error in post %v", err)
