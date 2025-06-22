@@ -5,6 +5,9 @@ import (
 	"fmt"
 	"strconv"
 	"image/color"
+	"bytes"
+	"image"
+	"image/png"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
@@ -12,8 +15,10 @@ import (
 	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/theme"
+	"github.com/wcharczuk/go-chart/v2"
 
 	"unimatch/presentation/navigation"
+	"unimatch/data/repository/student"
 )
 
 // --- Second formulary content and objects ---
@@ -50,7 +55,8 @@ func validateForm(questions []Question, interestEntries map[string]*widget.Entry
 
 	if total != 100 {
 		// dialog.ShowError(errors.New("Los porcentajes deben sumar exactamente 100%"), w)
-		navigation.ShowErrorDialog("Los porcentajes deben sumar exactamente 100%")
+		msg := fmt.Sprintf("Los porcentajes deben sumar exactamente 100%, solo llevas %v", total)
+		navigation.ShowErrorDialog(msg)
 		return
 	}
 
@@ -104,13 +110,17 @@ func validateForm(questions []Question, interestEntries map[string]*widget.Entry
 	}
 	// ✅ Everything is valid
 	// navigation.ShowDialog("Exito", "Todos los campos han sido validados correctamente")
-	// navigation.NavigateWithNewWindow(
-	// 	"Formulary",  //windowTitle
-	// 	studentSecondaryFormulary(),  //content
-	// 	true, // shouldHide
-	// 	fyne.NewSize(700, 500), // windows size
-	// 	nil, // onClose
-	// )
+	navigation.NavigateWithNewWindow(
+		"Carerras",  //windowTitle
+		chartScreen(Aptitudes, Skills, Interests),  //content
+		true, // shouldHide
+		fyne.NewSize(700, 500), // windows size
+		func() {
+			navigation.PopBackstack()
+			navigation.PopBackstack()
+			navigation.PopBackstack()
+		}, // onClose
+	)
 }
 
 // --- First screen Content ---
@@ -549,3 +559,73 @@ func studentSecondFormulary(Aptitude, Skill, Interest []string) fyne.CanvasObjec
 
 	return layoutContent
 }
+
+func chartScreen(Aptitude, Skill, Interest []string) fyne.CanvasObject {
+// func chartScreen() fyne.CanvasObject {
+	careers := studentrepo.GetStudentRepository().SuggestCareers(Aptitude, Skill, Interest)
+	
+	facultyImg := canvas.NewImageFromImage(createFacultyPieChart(careers))
+	facultyImg.FillMode = canvas.ImageFillOriginal
+
+	careerCharts := []fyne.CanvasObject{facultyImg}
+
+	for _, c := range careers {
+		label := widget.NewLabel(c.Career + " - " + c.Faculty)
+		img := canvas.NewImageFromImage(createCareerBarChart(c))
+		img.FillMode = canvas.ImageFillOriginal
+
+		careerCharts = append(careerCharts, label, img)
+	}
+
+	return container.NewVScroll(container.NewVBox(careerCharts...))
+}
+
+func createCareerBarChart(c *studentrepo.Career) image.Image {
+	graph := chart.BarChart{
+		Title:      c.Career + " - " + c.Faculty,
+		Height:     300,
+		BarWidth:   60,
+		Bars: []chart.Value{
+			{Value: float64(c.AptitudeMatch * 100), Label: "Aptitud"},
+			{Value: float64(c.SkillMatch * 100), Label: "Habilidad"},
+			{Value: float64(c.InterestMatch * 100), Label: "Interés"},
+		},
+	}
+
+	buf := bytes.NewBuffer([]byte{})
+	_ = graph.Render(chart.PNG, buf)
+	img, _ := png.Decode(buf)
+	return img
+}
+
+
+
+func createFacultyPieChart(careers []*studentrepo.Career) image.Image {
+	counts := make(map[string]int)
+	for _, c := range careers {
+		counts[c.Faculty]++
+	}
+
+	var values []chart.Value
+	total := float64(len(careers))
+
+	for faculty, count := range counts {
+		percentage := (float64(count) / total) * 100
+		values = append(values, chart.Value{
+			Value: percentage,
+			Label: faculty,
+		})
+	}
+
+	pie := chart.PieChart{
+		Width:  300,
+		Height: 300,
+		Values: values,
+	}
+
+	buf := bytes.NewBuffer([]byte{})
+	_ = pie.Render(chart.PNG, buf)
+	img, _ := png.Decode(buf)
+	return img
+}
+
