@@ -141,8 +141,37 @@ func (k knowledgeDaoImpl) GetFacts() ([]careerDto, error) {
 func (k knowledgeDaoImpl) UpdateFact(careerId int, Aptitude, Skill, Interest, PAptitude, PSkill, PInterest []string) (int64, error) {
     conn := k.db.GetConnection()
     
+    if (len(Aptitude) > len(PAptitude)) {
+        for i := len(PAptitude); i < len(Aptitude); i++ {
+            stmt, err := conn.Prepare("INSERT INTO proyecto1.aptitude(CareerId, Aptitude) VALUES (@CareerId, @Aptitude);")
+            if err != nil {
+                return 0, err
+            }
+
+            defer stmt.Close()
+
+            // Execute the prepared statement
+            result, err := stmt.Exec(
+                sql.Named("CareerId", careerId),
+                sql.Named("Aptitude", Aptitude[i]),
+            )
+            if err != nil {
+                return 0, err
+            }
+
+            // Get the number of row inserted
+            _, err = result.RowsAffected()
+            if err != nil {
+                return 0, err
+            } 
+        }  
+    }
 
     for i, aptitude := range Aptitude {
+        if i+1 > len(PAptitude) {
+            continue
+        }
+
         stmt, err := conn.Prepare("UPDATE proyecto1.aptitude SET Aptitude = @Aptitude WHERE CareerId = @CareerId AND Aptitude = @PAptitude;")
         if err != nil {
             return 0, err
@@ -168,7 +197,37 @@ func (k knowledgeDaoImpl) UpdateFact(careerId int, Aptitude, Skill, Interest, PA
         }
     }
 
+    if (len(Skill) > len(PSkill)) {
+        for i := len(PSkill); i < len(Skill); i++ {
+            stmt, err := conn.Prepare("INSERT INTO proyecto1.skill(CareerId, Skill) VALUES (@CareerId, @Skill);")
+            if err != nil {
+                return 0, err
+            }
+
+            defer stmt.Close()
+
+            // Execute the prepared statement
+            result, err := stmt.Exec(
+                sql.Named("CareerId", careerId),
+                sql.Named("Skill", Skill[i]),
+            )
+            if err != nil {
+                return 0, err
+            }
+
+            // Get the number of row inserted
+            _, err = result.RowsAffected()
+            if err != nil {
+                return 0, err
+            }
+        }  
+    }
+
     for i, skill := range Skill {
+        if i+1 > len(PSkill) {
+            continue
+        }
+
         stmt, err := conn.Prepare("UPDATE proyecto1.skill SET Skill = @Skill WHERE CareerId = @CareerId AND Skill = @PSkill;")
         if err != nil {
             return 0, err
@@ -194,7 +253,37 @@ func (k knowledgeDaoImpl) UpdateFact(careerId int, Aptitude, Skill, Interest, PA
         }
     }
 
+    if (len(Interest) > len(PInterest)) {
+        for i := len(PInterest); i < len(Interest); i++ {
+            stmt, err := conn.Prepare("INSERT INTO proyecto1.interest(CareerId, Interest) VALUES (@CareerId, @Interest);")
+            if err != nil {
+                return 0, err
+            }
+
+            defer stmt.Close()
+
+            // Execute the prepared statement
+            result, err := stmt.Exec(
+                sql.Named("CareerId", careerId),
+                sql.Named("Interest", Interest[i]),
+            )
+            if err != nil {
+                return 0, err
+            }
+
+            // Get the number of row inserted
+            _, err = result.RowsAffected()
+            if err != nil {
+                return 0, err
+            }  
+        } 
+    }
+
     for i, interest := range Interest {
+        if i+1 > len(PInterest) {
+            continue
+        }
+
         stmt, err := conn.Prepare("UPDATE proyecto1.interest SET Interest = @Interest WHERE CareerId = @CareerId AND Interest = @PInterest;")
         if err != nil {
             return 0, err
@@ -227,7 +316,6 @@ func (k knowledgeDaoImpl) AddFact(careerId int, Aptitude, Skill, Interest []stri
 
     conn := k.db.GetConnection()
     
-
     for aptitude := range Aptitude {
         stmt, err := conn.Prepare("INSERT INTO proyecto1.aptitude(CareerId, Aptitude) VALUES (@CareerId, @Aptitude);")
         if err != nil {
