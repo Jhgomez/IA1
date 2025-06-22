@@ -62,7 +62,7 @@ func AdminFacultySelectionScreen() fyne.CanvasObject {
 
 				navigation.NavigateWithNewWindow(
 					"Admin",  //windowTitle
-					adminCareerSelectionScreen(careers), //content
+					adminCareerSelectionScreen(&careers), //content
 					true, // shouldHide
 					fyne.NewSize(400, 500), // windows size
 					nil, // onClose
@@ -88,15 +88,44 @@ func AdminFacultySelectionScreen() fyne.CanvasObject {
 }
 
 
-func adminCareerSelectionScreen(careers []*adminrepo.EditableCareer) fyne.CanvasObject {
+func adminCareerSelectionScreen(careers *[]*adminrepo.EditableCareer) fyne.CanvasObject {
 	var careerButtons []fyne.CanvasObject
+	list := container.NewVBox()
 
-	for _, career := range careers {
+	// "Agregar carrera" button
+	addCareerBtn := widget.NewButton("Agregar carrera", func() {
+		println("Agregar nueva carrera")
+		// TODO: Navigate to career creation form
+	})
+
+	for index, career := range *careers {
 		c := career // capture for closure
 		btn := widget.NewButton(c.Career, func() {
 			navigation.NavigateWithNewWindow(
 				c.Career,  //windowTitle
-				careerEditScreen(c), //content
+				careerEditScreen(c, func () {
+					adminrepo.GetAdminRepository().DeleteCareer(c.CareerId)
+					updateRequired = true
+					
+					list.Objects = nil
+					
+					// fmt.Println(len(careers))
+					// fmt.Println(careers)
+					*careers = append((*careers)[:index], (*careers)[index+1:]...)
+
+					// fmt.Println(len(careers))
+					// fmt.Println(careers)
+					navigation.PopBackstack()
+
+					careerButtons = append(careerButtons[:index], careerButtons[index+1:]...)
+
+					for _, button := range careerButtons {
+						list.Add(button)
+					}
+
+					list.Refresh()
+
+				}), //content
 				true, // shouldHide
 				fyne.NewSize(900, 550), // windows size
 				func () {
@@ -105,6 +134,7 @@ func adminCareerSelectionScreen(careers []*adminrepo.EditableCareer) fyne.Canvas
 			)
 		})
 		careerButtons = append(careerButtons, btn)
+		list.Add(btn)
 	}
 
 	// Title
@@ -113,18 +143,12 @@ func adminCareerSelectionScreen(careers []*adminrepo.EditableCareer) fyne.Canvas
 	title.Alignment = fyne.TextAlignCenter
 	title.TextSize = 24
 
-	// "Agregar carrera" button
-	addCareerBtn := widget.NewButton("Agregar carrera", func() {
-		println("Agregar nueva carrera")
-		// TODO: Navigate to career creation form
-	})
-
 	// Scrollable content (title + list of careers)
 	scrollArea := container.NewVScroll(
 		container.NewVBox(
 			title,
 			addSpacing(0, 16),
-			container.NewVBox(careerButtons...),
+			list,
 		),
 	)
 	scrollArea.SetMinSize(fyne.NewSize(400, 400))
@@ -135,7 +159,7 @@ func adminCareerSelectionScreen(careers []*adminrepo.EditableCareer) fyne.Canvas
 	return content
 }
 
-func careerEditScreen(career *adminrepo.EditableCareer) fyne.CanvasObject {
+func careerEditScreen(career *adminrepo.EditableCareer, onDeleteCareer func()) fyne.CanvasObject {
 	title := widget.NewLabelWithStyle("Editar carrera: "+career.Career, fyne.TextAlignLeading, fyne.TextStyle{Bold: true})
 	repo := adminrepo.GetAdminRepository()
 
@@ -198,8 +222,7 @@ func careerEditScreen(career *adminrepo.EditableCareer) fyne.CanvasObject {
 	)
 
 	deleteBtn := widget.NewButton("Borrar carrera", func() {
-		// handle delete
-		updateRequired = true
+		onDeleteCareer()
 	})
 
 

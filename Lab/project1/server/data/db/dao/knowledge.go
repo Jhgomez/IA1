@@ -394,7 +394,7 @@ func (k knowledgeDaoImpl) AddFact(careerId int, Aptitude, Skill, Interest []stri
 
 func (k knowledgeDaoImpl) DeleteCareer(careerId int) (int64, error) {
     conn := k.db.GetConnection()
-    conn.Close()
+    // conn.Close()
 
     stmt, err := conn.Prepare("DELETE FROM proyecto1.aptitude WHERE CareerId = @CareerId;")
     if err != nil {
