@@ -1,7 +1,7 @@
 package adminrepo
 
 import (
-	// "fmt"
+	"fmt"
 	"sync"
 
 	"unimatch/data/network"
@@ -17,7 +17,7 @@ type EditableCareer struct {
 }
 
 type AdminRepository interface {
-	GetCareers() ([]EditableCareer, error)
+	GetCareers() ([]*EditableCareer, error)
 	UpdateCareer(careerId int, Aptitude, Skill, Interest, PAptitude, PSkill, PInterest []string) (int, error)
 	DeleteCareer(CareerId int) (int, error)
 	AddCareer(Faculty, Career string, Aptitude, Skill, Interest []string) (int, error)
@@ -41,20 +41,20 @@ func GetAdminRepository() AdminRepository {
 	return adminRepo
 }
 
-func (a adminRepositoryImpl) GetCareers() ([]EditableCareer, error) {
+func (a adminRepositoryImpl) GetCareers() ([]*EditableCareer, error) {
 	apiFacts, err := a.api.GetFacts()
 
 	if err != nil {
-		return []EditableCareer{}, err
+		return []*EditableCareer{}, err
 	}
 
 	// fmt.Println("apiFacts")
 	// fmt.Println(apiFacts)
 
-	careers := make([]EditableCareer, len(apiFacts))
+	careers := make([]*EditableCareer, len(apiFacts))
 
 	for i, fact := range apiFacts {
-		careers[i] = EditableCareer{ 
+		careers[i] = &EditableCareer{ 
 			CareerId: fact.CareerId,
 			Faculty: fact.Faculty,
 			Career: fact.Career,
@@ -74,9 +74,11 @@ func (a adminRepositoryImpl) UpdateCareer(careerId int, Aptitude, Skill, Interes
 	rows, err := a.api.UpdateFact(careerId, Aptitude, Skill, Interest, PAptitude, PSkill, PInterest)
 
 	if err != nil {
+		fmt.Println(err)
 		return -1, err
 	}
 
+	fmt.Println(rows)
 	return rows, nil
 }
 
@@ -84,9 +86,11 @@ func (a adminRepositoryImpl) DeleteCareer(CareerId int) (int, error) {
 	rows, err := a.api.DeleteCareer(CareerId)
 
 	if err != nil {
+		fmt.Println(err)
 		return -1, err
 	}
 
+	fmt.Println(rows)
 	return rows, nil
 }
 
