@@ -16,6 +16,8 @@ import (
 	"unimatch/presentation/navigation"
 )
 
+// --- Second formulary content and objects ---
+
 type Question struct {
 	Text         string
 	Options      []string
@@ -28,6 +30,13 @@ type Question struct {
 var questions []Question
 
 var interestEntries map[string]*widget.Entry
+
+func addSpacing(width float32, height float32) fyne.CanvasObject {
+	spacing := canvas.NewRectangle(nil)
+	spacing.SetMinSize(fyne.NewSize(width, height))
+
+	return spacing
+}
 
 func validateForm() {
 	// Validate interest entries sum
@@ -94,7 +103,17 @@ func validateForm() {
 	// )
 }
 
-func StudentPrimaryFormulary() fyne.CanvasObject {
+// --- First screen Content ---
+var skills = []string{"laboratorio", "diseno mecanico", "comunicacion", "investigacion", "numeros"}
+
+func StudentFirstFormulary() fyne.CanvasObject {
+	var selectedAptitudes []string
+	var selectedSkills []string
+	var selectedInterests []string
+
+	var aptitudes = []string{"liderazgo", "pensamiento critico", "biologia", "logica"}
+	var intereses = []string{"urbanizacion", "arte", "negocios", "lectura"}
+	
 	// Title
 	title := canvas.NewText("Bienvenido", theme.PrimaryColor())
 	title.TextStyle = fyne.TextStyle{Bold: true}
@@ -111,11 +130,229 @@ func StudentPrimaryFormulary() fyne.CanvasObject {
 		fyne.TextStyle{Italic: true},
 	)
 
+// --- Left Section Content ---
+	instruction := canvas.NewText("Selecciona tus aptitudes e intereses", theme.ForegroundColor())
+	instruction.TextStyle = fyne.TextStyle{Bold: true}
+	instruction.Alignment = fyne.TextAlignCenter
+	instruction.TextSize = 16
+
+	// Dropdown
+	currentCategory := "aptitudes"
+
+	// Selectable List
+	listContainer := container.NewVBox()
+
+	leftColScroll := container.NewVScroll(listContainer)
+	leftColScroll.SetMinSize(fyne.NewSize(200, 400))
+
+	selectedMap := map[string]bool{}
+
+	refreshList := func() {
+		listContainer.Objects = nil
+		var source []string
+		if currentCategory == "aptitudes" {
+			source = aptitudes
+		} else {
+			source = intereses
+		}
+
+		for _, item := range source {
+			if selectedMap[item] {
+				continue
+			}
+
+			// Background rectangle
+			bg := canvas.NewRectangle(theme.BackgroundColor())
+			bg.SetMinSize(fyne.NewSize(110, 40)) // Set fixed height for visual consistency
+
+			// Label to show the item
+			label := widget.NewLabel(item)
+			label.Alignment = fyne.TextAlignLeading
+			labelContainer := container.NewHBox(label)
+
+			// Variable to track selection
+			isSelected := false
+			currentItem := item
+
+			// Button to sit on top of background and handle clicks
+			button := widget.NewButton("", func() {
+				isSelected = !isSelected
+				selectedMap[currentItem] = isSelected
+
+				if isSelected {
+					bg.FillColor = theme.PrimaryColor() // Highlight selected
+				} else {
+					bg.FillColor = theme.BackgroundColor() // Unselected
+				}
+				bg.Refresh()
+			})
+
+			// Remove button styling to make it look like just a row
+			button.Importance = widget.LowImportance
+			button.Resize(fyne.NewSize(110, 40))
+
+			// Stack layout: background at bottom, label and button on top
+			row := container.NewStack(
+				button,
+				bg,
+				labelContainer,
+			)
+
+			listContainer.Add(row)
+		}
+
+		listContainer.Refresh()
+	}
+
+
+	// Dropdown
+	dropdown := widget.NewSelect([]string{"aptitudes", "intereses"}, func(s string) {
+		currentCategory = s
+		refreshList()
+	})
+	dropdown.Selected = currentCategory
+
+	// set up list container
+	refreshList()
+
+	// Button
+	addButton := widget.NewButton("Agregar", func() {
+		for item, selected := range selectedMap {
+			if selected {
+				selectedMap[item] = false
+
+				// Remove from source
+				if currentCategory == "aptitudes" {
+					selectedAptitudes = append(selectedAptitudes, item)
+					aptitudes = removeFromSlice(aptitudes, item)
+				} else {
+					selectedInterests = append(selectedInterests, item)
+					intereses = removeFromSlice(intereses, item)
+				}
+			}
+		}
+		refreshList()
+	})
+
+
+	buttonsLeftCol := container.NewVBox(
+		dropdown,
+		addSpacing(0, 24),
+		addButton,
+	)
+
+	leftRow := container.NewHBox(
+		addSpacing(16, 0),
+		buttonsLeftCol,
+		addSpacing(16, 0),
+		leftColScroll,
+		addSpacing(16, 0),
+	)
+
+	leftCol := container.NewVBox(
+		addSpacing(0, 8),
+		instruction,
+		addSpacing(0, 32),
+		leftRow,
+	)
+
+	background := canvas.NewRectangle(theme.DisabledButtonColor())
+
+	leftColContainer := container.NewMax(background, leftCol)
 	
+// --- Right Section Content ---
+	skillInstruction := canvas.NewText("Selecciona las habilidades que has desarrollado", theme.ForegroundColor())
+	skillInstruction.TextStyle = fyne.TextStyle{Bold: true}
+	skillInstruction.TextSize = 16
+
+	var skillCheckboxes []*widget.Check
+
+	skillList := container.NewVBox()
+
+	rightColScroll := container.NewVScroll(skillList)
+	rightColScroll.SetMinSize(fyne.NewSize(300, 400))
+
+	for _, skill := range skills {
+		check := widget.NewCheck(skill, nil)
+		skillCheckboxes = append(skillCheckboxes, check)
+		skillList.Add(check)
+	}
+
+	rightCol := container.NewHBox(
+		addSpacing(16, 0),
+		container.NewVBox(
+			addSpacing(0, 8),
+			skillInstruction,
+			addSpacing(0, 16),
+			rightColScroll,
+		),
+		addSpacing(16, 0),
+	)
+
+	righttColContainer := container.NewMax(background, rightCol)
+
+	validateBtn := widget.NewButton("Siguiente", func() {
+		for _, check := range skillCheckboxes {
+			if check.Checked {
+				selectedSkills = append(selectedSkills, check.Text)
+			}
+		}
+
+		if len(selectedAptitudes) == 0 || len(selectedSkills) == 0 || len(selectedInterests) == 0 {
+			navigation.ShowErrorDialog("Debes de elegir al menos una opcion en cada diferente seccion")
+			return
+		}
+
+		navigation.NavigateWithNewWindow(
+			"Formulary",  //windowTitle
+			studentSecondFormulary(selectedAptitudes, selectedSkills, selectedInterests),  //content
+			true, // shouldHide
+			fyne.NewSize(700, 500), // windows size
+			nil, // onClose
+		)
+	})
+
+	bottom := container.NewHBox(
+		layout.NewSpacer(), // pushes button to the right
+		validateBtn,
+		addSpacing(16, 0),
+	)
+
+	// --- Columns ---
+	columns := container.NewHBox(
+		layout.NewSpacer(),
+		leftColContainer,
+		addSpacing(32,0),
+		layout.NewSpacer(),
+		righttColContainer,
+		layout.NewSpacer(),
+	)
+
+	content := container.NewVBox(
+		title,
+		description,
+		layout.NewSpacer(),
+		columns,
+		addSpacing(0,16),
+		bottom,
+		addSpacing(0,16),
+	)
+
+	return content
+}
+
+func removeFromSlice(slice []string, val string) []string {
+	result := []string{}
+	for _, v := range slice {
+		if v != val {
+			result = append(result, v)
+		}
+	}
+	return result
 }
 
 
-func studenSecondaryFormulary() fyne.CanvasObject {
+func studentSecondFormulary(Aptitude, Skill, Interest []string) fyne.CanvasObject {
 	// Title
 	title := canvas.NewText("Bienvenido", theme.PrimaryColor())
 	title.TextStyle = fyne.TextStyle{Bold: true}
