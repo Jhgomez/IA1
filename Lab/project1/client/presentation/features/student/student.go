@@ -27,10 +27,6 @@ type Question struct {
 	ContainerBox *fyne.Container // used later for styling
 }
 
-var questions []Question
-
-var interestEntries map[string]*widget.Entry
-
 func addSpacing(width float32, height float32) fyne.CanvasObject {
 	spacing := canvas.NewRectangle(nil)
 	spacing.SetMinSize(fyne.NewSize(width, height))
@@ -38,22 +34,17 @@ func addSpacing(width float32, height float32) fyne.CanvasObject {
 	return spacing
 }
 
-func validateForm() {
+func validateForm(questions []Question, interestEntries map[string]*widget.Entry, Aptitudes, Skills, Interests []string) {
 	// Validate interest entries sum
 	total := 0
-	for label, entry := range interestEntries {
+	for _, entry := range interestEntries {
 		text := entry.Text
 		if text == "" {
 			text = "0"
 		}
 
-		value, err := strconv.Atoi(text)
-		if err != nil {
-			msg := fmt.Sprintf("Valor inválido en el campo de interés: %s", label)
-			// dialog.ShowError(msg, w)
-			navigation.ShowErrorDialog(msg)
-			return
-		}
+		value, _ := strconv.Atoi(text)
+
 		total += value
 	}
 
@@ -63,6 +54,9 @@ func validateForm() {
 		return
 	}
 
+	// Count checked boxes
+	selectedSkills := []string{}
+		
 	// Validate questions
 	for i, q := range questions {
 		// Count checked boxes
@@ -71,6 +65,8 @@ func validateForm() {
 			if c.Checked {
 				selected++
 			}
+
+			selectedSkills = append(selectedSkills, c.Text)
 		}
 
 		// Reset label to normal
@@ -92,6 +88,20 @@ func validateForm() {
 		}
 	}
 
+	Skills = append(Skills, selectedSkills...)
+
+	for label, entry := range interestEntries {
+		text := entry.Text
+		if text == "" {
+			continue
+		}
+
+		value, _ := strconv.Atoi(text)
+
+		if value > 0 {
+			Interests = append(Interests, label)
+		}
+	}
 	// ✅ Everything is valid
 	// navigation.ShowDialog("Exito", "Todos los campos han sido validados correctamente")
 	// navigation.NavigateWithNewWindow(
@@ -104,15 +114,15 @@ func validateForm() {
 }
 
 // --- First screen Content ---
-var skills = []string{"laboratorio", "diseno mecanico", "comunicacion", "investigacion", "numeros"}
+var skills = []string{"diseno espacial", "redaccion", "laboratorio", "dibujo", "atencion", "investigacion", "lectura comprensiva", "circuitos", "diseno mecanico", "simulacion", "automatizacion"}
 
 func StudentFirstFormulary() fyne.CanvasObject {
 	var selectedAptitudes []string
 	var selectedSkills []string
 	var selectedInterests []string
 
-	var aptitudes = []string{"liderazgo", "pensamiento critico", "biologia", "logica"}
-	var intereses = []string{"urbanizacion", "arte", "negocios", "lectura"}
+	var aptitudes = []string{"liderazgo", "argumentacion", "biologia", "precision", "resolucion de problemas", "logica", "pensamiento analitico", "creatividad tecnica", "perseverancia", "adaptabilidad", "organizacion espacial", "empatia clinica", "curiosidad cientifica", "compromiso", "pensamiento abstracto", "intuicion", "sensibilidad social", "iniciativa", "pensamiento logico", "responsabilidad", "analisis juridico", "sensibilidad estetica", "empatia", "creatividad", "observacion", "analisis cuantitativo", "razonamiento", "pensamiento critico", "analisis", "matematica"}
+	var intereses = []string{"urbanizacion", "lectura", "justicia", "procesos industriales", "salud publica", "energia", "maquinaria", "construccion", "tecnologia", "salud", "medio ambiente", "energias renovables", "innovacion", "inteligencia artificial"}
 	
 	// Title
 	title := canvas.NewText("Bienvenido", theme.PrimaryColor())
@@ -353,6 +363,9 @@ func removeFromSlice(slice []string, val string) []string {
 
 
 func studentSecondFormulary(Aptitude, Skill, Interest []string) fyne.CanvasObject {
+	var questions []Question
+
+	var interestEntries map[string]*widget.Entry
 	// Title
 	title := canvas.NewText("Bienvenido", theme.PrimaryColor())
 	title.TextStyle = fyne.TextStyle{Bold: true}
@@ -370,7 +383,7 @@ func studentSecondFormulary(Aptitude, Skill, Interest []string) fyne.CanvasObjec
 	)
 
 	// ---------- Left Interests Section ----------
-	interests := []string{"Science", "Art", "Technology", "Business", "Education"}
+	interests := []string{"gestion financiera", "comportamiento humano", "bienestar", "justicia social", "mercados", "negocios", "infraestructura", "bienestar comun", "habitos saludables", "salud mental", "etica", "relaciones humanas", "equidad", "emprendimiento", "politica publica", "cumplimiento fiscal", "derechos humanos", "sostenibilidad"}
 	interestEntries = make(map[string]*widget.Entry)
 	var interestRows []fyne.CanvasObject
 
@@ -424,14 +437,24 @@ func studentSecondFormulary(Aptitude, Skill, Interest []string) fyne.CanvasObjec
 
 	questions = []Question{
 		{
-			Text:     "¿Qué ambientes prefieres? (Selecciona 2)",
-			Options:  []string{"Interior", "Exterior", "Remoto", "Híbrido"},
+			Text:     "¿Qué habilidad te interesaria desarrollar? (Selecciona 2)",
+			Options:  []string{"comunicacion", "numeros", "programacion", "orgnaizacion"},
 			Required: 2,
 		},
 		{
-			Text:     "¿Qué tipo de tareas disfrutas? (Selecciona 1)",
-			Options:  []string{"Creativas", "Analíticas", "Prácticas", "Sociales"},
-			Required: 1,
+			Text:     "¿Que habilidades se te podrian hacer faciles? (Selecciona 3)",
+			Options:  []string{"escucha activa", "manufactura", "ciberseguridad", "topografia", "diagnostico", "planificacion alimentaria"},
+			Required: 3,
+		},
+		{
+			Text:     "¿Lees articulos o ves videos acerca de uno de esto temas? (Selecciona 2)",
+			Options:  []string{"manejo de pacientes", "debate", "evaluacion psicologica", "recoleccion de datos", "gestion de proyectos", "modelado economico"},
+			Required: 2,
+		},
+		{			
+			Text:     "¿Disfutas tareas/ejercicios de alguno de las siguientes areas?,  (Selecciona 1)",
+			Options:  []string{"auditoria", "argumentacion legal", "maquetado"},
+			Required: 1, 
 		},
 	}
 
@@ -497,8 +520,8 @@ func studentSecondFormulary(Aptitude, Skill, Interest []string) fyne.CanvasObjec
 
 	rightColumn := container.NewVBox(rightTitle, spacer1, rightScroll)
 
-	validateBtn := widget.NewButton("Validar", func() {
-		validateForm()
+	validateBtn := widget.NewButton("Ver opciones", func() {
+		validateForm(questions, interestEntries, Aptitude, Skill, Interest)
 	})
 
 	bottom := container.NewHBox(
