@@ -12,6 +12,7 @@ import (
 
 	"unimatch/presentation/navigation"
 	"unimatch/presentation/features/student"
+	"unimatch/presentation/features/admin"
 )
 
 func HomeScreen() fyne.CanvasObject {
@@ -42,7 +43,13 @@ func HomeScreen() fyne.CanvasObject {
 		)
 	})
 	adminBtn := widget.NewButtonWithIcon("Administrator", theme.SettingsIcon(), func() {
-		// Handle admin button click
+		navigation.NavigateWithNewWindow(
+			"Admin",  //windowTitle
+			admin.AdminFacultySelectionScreen(), //content
+			true, // shouldHide
+			fyne.NewSize(400, 500), // windows size
+			nil, // onClose
+		)
 	})
 
 	buttons := container.NewHBox(layout.NewSpacer(), studentBtn, layout.NewSpacer(), adminBtn, layout.NewSpacer())
