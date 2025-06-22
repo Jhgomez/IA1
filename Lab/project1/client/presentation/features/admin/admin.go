@@ -13,14 +13,29 @@ import (
 	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
-	
+	"unimatch/data/repository/knowledge"
 )
+
+var updateRequired = false
 
 func addSpacing(width float32, height float32) fyne.CanvasObject {
 	spacing := canvas.NewRectangle(nil)
 	spacing.SetMinSize(fyne.NewSize(width, height))
 
 	return spacing
+}
+
+
+func CheckIfUpdateNeeded() {
+	if updateRequired {
+		_, err := knowledgerepo.GetKnowledgeRepo().LoadKnowledgeBase()
+
+		if err != nil {
+			fmt.Printf("error in knowledge repo %v", err)
+		}
+
+		fmt.Println("Knowledge updated")
+	}
 }
 
 func AdminFacultySelectionScreen() fyne.CanvasObject {
@@ -83,7 +98,7 @@ func adminCareerSelectionScreen(careers []*adminrepo.EditableCareer) fyne.Canvas
 				c.Career,  //windowTitle
 				careerEditScreen(c), //content
 				true, // shouldHide
-				fyne.NewSize(700, 500), // windows size
+				fyne.NewSize(900, 550), // windows size
 				func () {
 					navigation.PopBackstack()
 				}, // onClose
@@ -124,18 +139,49 @@ func careerEditScreen(career *adminrepo.EditableCareer) fyne.CanvasObject {
 	title := widget.NewLabelWithStyle("Editar carrera: "+career.Career, fyne.TextAlignLeading, fyne.TextStyle{Bold: true})
 	repo := adminrepo.GetAdminRepository()
 
-	aptitudeBox, aptitudeEntries := buildEditableList(career.Aptitude, func (index int) {
-		repo.DeleteFact(career.CareerId, career.Aptitude[index], "", "")
+	aptitudeEntries := []*widget.Entry{}
 
-		career.Aptitude[index] = ""
+	aptitudeBox := buildEditableList(career.Aptitude, &aptitudeEntries, func (index int) {
+		if index > len(career.Aptitude)-1 {
+			return
+		}
+
+		// fmt.Println(aptitudeEntries)
+		repo.DeleteFact(career.CareerId, career.Aptitude[index], "", "")
+		updateRequired = true
+
+		career.Aptitude = append(career.Aptitude[:index], career.Aptitude[index+1:]...)
+		// fmt.Println(career.Aptitude)
 	})
-	skillBox, skillEntries := buildEditableList(career.Skill, func (index int) {
+
+	skillEntries := []*widget.Entry{}
+
+	skillBox := buildEditableList(career.Skill, &skillEntries, func (index int) {
+		if index > len(career.Skill)-1 {
+			return
+		}
+
+		// fmt.Println(skillEntries)
 		repo.DeleteFact(career.CareerId, "", career.Skill[index], "")
-		career.Skill[index] = ""	
+		updateRequired = true
+
+		career.Aptitude = append(career.Skill[:index], career.Skill[index+1:]...)
+		// career.Skill[index] = ""	
 	})
-	interestBox, interestEntries := buildEditableList(career.Interest, func (index int) {
+
+	interestEntries := []*widget.Entry{}
+
+	interestBox := buildEditableList(career.Interest, &interestEntries, func (index int) {
+		if index > len(career.Interest)-1 {
+			return
+		}
+
+		// fmt.Println(interestEntries)
 		repo.DeleteFact(career.CareerId, "", "", career.Interest[index])
-		career.Interest[index] = ""	
+		updateRequired = true
+
+		career.Aptitude = append(career.Interest[:index], career.Interest[index+1:]...)
+		// career.Interest[index] = ""	
 	})
 
 	aptitudesSection := container.NewVBox(
@@ -153,6 +199,7 @@ func careerEditScreen(career *adminrepo.EditableCareer) fyne.CanvasObject {
 
 	deleteBtn := widget.NewButton("Borrar carrera", func() {
 		// handle delete
+		updateRequired = true
 	})
 
 
@@ -163,6 +210,9 @@ func careerEditScreen(career *adminrepo.EditableCareer) fyne.CanvasObject {
 			text := strings.TrimSpace(entry.Text)
 			if text != "" {
 				newAptitudes = append(newAptitudes, text)
+			} else {
+				navigation.ShowErrorDialog("No pueden haber apitudes vacias")
+				return
 			}
 		}
 
@@ -171,6 +221,9 @@ func careerEditScreen(career *adminrepo.EditableCareer) fyne.CanvasObject {
 			text := strings.TrimSpace(entry.Text)
 			if text != "" {
 				newSkills = append(newSkills, text)
+			} else {
+				navigation.ShowErrorDialog("No pueden haber habilidades vacias")
+				return
 			}
 		}
 
@@ -179,6 +232,9 @@ func careerEditScreen(career *adminrepo.EditableCareer) fyne.CanvasObject {
 			text := strings.TrimSpace(entry.Text)
 			if text != "" {
 				newInterests = append(newInterests, text)
+			} else {
+				navigation.ShowErrorDialog("No pueden haber intereses vacios")
+				return
 			}
 		}
 
@@ -190,6 +246,7 @@ func careerEditScreen(career *adminrepo.EditableCareer) fyne.CanvasObject {
 		career.Skill = newSkills
 		career.Interest = newInterests
 		// fmt.Println(career.Aptitude)
+		updateRequired = true
 	})
 
 	topRow := container.NewHBox(
@@ -219,49 +276,56 @@ func careerEditScreen(career *adminrepo.EditableCareer) fyne.CanvasObject {
 	return content
 }
 
-// option 1 for aptitudes, 2 for skills, 3 for interests
-func buildEditableList(items []string, onClick func(index int)) (*fyne.Container, []*widget.Entry) {
-	var entries []*widget.Entry
+func buildEditableList(items []string, entries *[]*widget.Entry, onClick func(index int)) (*fyne.Container) {
 	list := container.NewVBox()
+	footer := container.NewVBox()
 
 	var refresh func()
 
 	refresh = func() {
 		list.Objects = nil
-		for i, entry := range entries {
-			// delete button
+		for i, entry := range *entries {
 			trash := widget.NewButtonWithIcon("", theme.DeleteIcon(), func(index int) func() {
 				return func() {
-					entries = append(entries[:index], entries[index+1:]...)
+					*entries = append((*entries)[:index], (*entries)[index+1:]...)
 					refresh()
 					onClick(index)
 				}
 			}(i))
 
-			// content := container.NewHBox(entry, trash)
-
-			// Make the entry expand as much as possible
 			entryContainer := container.NewBorder(nil, nil, nil, trash, entry)
 			list.Add(entryContainer)
 		}
 		list.Refresh()
 	}
 
+	// Initial entries
 	for _, item := range items {
 		if item == "" {
 			continue
 		}
-
 		entry := widget.NewEntry()
 		entry.SetText(item)
-		entry.Wrapping = fyne.TextWrapOff // Optional: prevent line breaks
-		entries = append(entries, entry)
+		*entries = append(*entries, entry)
 	}
-
 	refresh()
 
-	scroll := container.NewVScroll(list)
-	scroll.SetMinSize(fyne.NewSize(240, 300)) // Set width to accommodate widest content
+	// Agregar button
+	addButton := widget.NewButton("Agregar", func() {
+		newEntry := widget.NewEntry()
+		*entries = append(*entries, newEntry)
+		refresh()
+	})
+	footer.Add(addButton)
 
-	return container.NewVBox(scroll), entries
+	scroll := container.NewVScroll(list)
+	scroll.SetMinSize(fyne.NewSize(240, 300))
+
+	full := container.NewVBox(
+		scroll,
+		footer,
+	)
+
+	return full
 }
+

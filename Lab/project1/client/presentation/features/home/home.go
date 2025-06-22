@@ -48,7 +48,10 @@ func HomeScreen() fyne.CanvasObject {
 			admin.AdminFacultySelectionScreen(), //content
 			true, // shouldHide
 			fyne.NewSize(400, 500), // windows size
-			nil, // onClose
+			func() {
+				admin.CheckIfUpdateNeeded()
+				navigation.PopBackstack()
+			}, // onClose
 		)
 	})
 
