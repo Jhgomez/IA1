@@ -1,25 +1,27 @@
 package adminrepo
 
 import (
-	"fmt"
+	// "fmt"
 	"sync"
 
 	"unimatch/data/network"
 )
 
 type EditableCareer struct {
+	CareerId	int
 	Faculty		string
 	Career   	string
-	Aptitude 	string
-	Skill    	string
-	Interest 	string
+	Aptitude 	[]string
+	Skill    	[]string
+	Interest 	[]string
 }
 
 type AdminRepository interface {
 	GetCareers() ([]EditableCareer, error)
-	UpdateCareer(Faculty, Career, Aptitude, Skill, Interest string) (int, error)
-	DeleteCareer(Faculty, Career string) (int, error)
-	AddCareer(Faculty, Career, Aptitude, Skill, Interest string) (int, error)
+	UpdateCareer(careerId int, Aptitude, Skill, Interest, PAptitude, PSkill, PInterest []string) (int, error)
+	DeleteCareer(CareerId int) (int, error)
+	AddCareer(Faculty, Career string, Aptitude, Skill, Interest []string) (int, error)
+	DeleteFact(careerId int, Aptitude, Skill, Interest string) (int, error)
 }
 
 type adminRepositoryImpl struct {
@@ -53,6 +55,7 @@ func (a adminRepositoryImpl) GetCareers() ([]EditableCareer, error) {
 
 	for i, fact := range apiFacts {
 		careers[i] = EditableCareer{ 
+			CareerId: fact.CareerId,
 			Faculty: fact.Faculty,
 			Career: fact.Career,
 			Aptitude: fact.Aptitude, 
@@ -67,8 +70,8 @@ func (a adminRepositoryImpl) GetCareers() ([]EditableCareer, error) {
 	return careers, nil
 }
 
-func (a adminRepositoryImpl) UpdateCareer(Faculty, Career, Aptitude, Skill, Interest string) (int, error) {
-	rows, err := a.api.UpdateFact(Faculty, Career, Aptitude, Skill, Interest)
+func (a adminRepositoryImpl) UpdateCareer(careerId int, Aptitude, Skill, Interest, PAptitude, PSkill, PInterest []string) (int, error) {
+	rows, err := a.api.UpdateFact(careerId, Aptitude, Skill, Interest, PAptitude, PSkill, PInterest)
 
 	if err != nil {
 		return -1, err
@@ -77,8 +80,8 @@ func (a adminRepositoryImpl) UpdateCareer(Faculty, Career, Aptitude, Skill, Inte
 	return rows, nil
 }
 
-func (a adminRepositoryImpl) DeleteCareer(Faculty, Career string) (int, error) {
-	rows, err := a.api.DeleteFact(Faculty, Career)
+func (a adminRepositoryImpl) DeleteCareer(CareerId int) (int, error) {
+	rows, err := a.api.DeleteCareer(CareerId)
 
 	if err != nil {
 		return -1, err
@@ -87,8 +90,24 @@ func (a adminRepositoryImpl) DeleteCareer(Faculty, Career string) (int, error) {
 	return rows, nil
 }
 
-func (a adminRepositoryImpl) AddCareer(Faculty, Career, Aptitude, Skill, Interest string) (int, error) {
-	rows, err := a.api.AddFact(Faculty, Career, Aptitude, Skill, Interest)
+func (a adminRepositoryImpl) DeleteFact(careerId int, Aptitude, Skill, Interest string) (int, error) {
+	rows, err := a.api.DeleteFact(careerId, Aptitude, Skill, Interest)
+
+	if err != nil {
+		return -1, err
+	}
+
+	return rows, nil
+}
+
+func (a adminRepositoryImpl) AddCareer(Faculty, Career string, Aptitude, Skill, Interest []string) (int, error) {
+	careerId, err := a.api.AddCareer(Faculty, Career)
+
+	if err != nil {
+		return -1, err
+	}
+
+	rows, err := a.api.AddFact(careerId, Aptitude, Skill, Interest)
 
 	if err != nil {
 		return -1, err
