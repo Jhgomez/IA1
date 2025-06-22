@@ -1,11 +1,13 @@
 package knowledgerepo
 
 import(
-	// "fmt"
+	"fmt"
+	"strings"
 
 	"unimatch/data/knowledge"
 	"unimatch/data/network"
 )
+
 
 type KnowledgeRepository interface {
 	LoadKnowledgeBase() (int, error)
@@ -27,6 +29,33 @@ func GetKnowledgeRepo() KnowledgeRepository {
 }
 
 func (r knowledgeRepositoryImpl) LoadKnowledgeBase() (int, error) {
+	matchingCounterPredicates := `member(X, [X|_]).
+	member(X, [_|T]) :- member(X, T).
+
+	% --- count how many matches from List1 exist in List2 ---
+	count_matches([], _, 0).
+	count_matches([H|T], List, Count) :-
+	member(H, List) ->
+	(count_matches(T, List, Rest), Count is Rest + 1);
+	count_matches(T, List, Count).
+	`
+	r.knowledgeSource.LoadRule(matchingCounterPredicates)
+
+	greaterThanPredicate := "greater_than(X, Y) :- X is Y + 1."
+
+	r.knowledgeSource.LoadRule(greaterThanPredicate)
+
+	careerMatchingRules := `match_all_careers(UserAptitudes, UserSkills, UserInterests, Faculty, Career, AptitudeMatches, SkillMatches, InterestMatches, AptitudeTotal, SkillTotal, InterestTotal) :-
+	career_details(Faculty, Career, AList, SList, IList, AptitudeTotal, SkillTotal, InterestTotal),
+    count_matches(UserAptitudes, AList, AptitudeMatches),
+    count_matches(UserSkills, SList, SkillMatches),
+    count_matches(UserInterests, IList, InterestMatches),
+	(greater_than(AptitudeMatches, 0) ; 
+	greater_than(SkillMatches, 0) ; 
+	greater_than(InterestMatches, 0)).`
+
+	r.knowledgeSource.LoadRule(careerMatchingRules)
+
 	apiFacts, err := r.api.GetFacts()
 
 	if err != nil {
@@ -35,27 +64,46 @@ func (r knowledgeRepositoryImpl) LoadKnowledgeBase() (int, error) {
 
 	// fmt.Println("apiFacts")
 	// fmt.Println(apiFacts)
+	for _, fac := range apiFacts {
+		
+		factString := fmt.Sprintf(
+			"career_details('%s', '%s', %s, %s, %s, %d, %d, %d).",
+			fac.Faculty, 
+			fac.Career,
+			r.formatPrologList(fac.Aptitude),
+			r.formatPrologList(fac.Skill), 
+			r.formatPrologList(fac.Interest),
+			len(fac.Aptitude),
+			len(fac.Skill),
+			len(fac.Interest),
+		)
 
-	careerFacts := make([]knowledgesource.CareerFactDto, len(apiFacts))
-
-	for i, fact := range apiFacts {
-		careerFacts[i] = knowledgesource.CareerFactDto{ 
-			Faculty: fact.Faculty,
-			Career: fact.Career,
-			Aptitude: fact.Aptitude, 
-			Skill: fact.Skill, 
-			Interest: fact.Interest,
-		}
+		r.knowledgeSource.LoadCareerFact(factString)
 	}
 
 	// fmt.Println("careerFacts")
-	// fmt.Println(careerFacts)
+	// fmt.Println(apiFacts)
 
-	r.knowledgeSource.LoadCareerFacts(careerFacts)
+	return len(apiFacts), nil
+}
 
-	return len(careerFacts), nil
+func(r knowledgeRepositoryImpl) formatPrologList(items []string) string {
+	var quoted []string
+
+	for _, item := range items {
+		str := fmt.Sprintf("%v", item) // safely convert anything to string
+		quoted = append(quoted, fmt.Sprintf("'%s'", str))
+	}
+
+	return "[" + strings.Join(quoted, ", ") + "]"
 }
 
 // func main() {
-// 	GetHomeRepo().LoadKnowledgeBase()
+// 	n, err := GetKnowledgeRepo().LoadKnowledgeBase()
+
+// 	if err != nil {
+// 		fmt.Println(err)
+// 	}
+
+// 	fmt.Println(n)
 // }
