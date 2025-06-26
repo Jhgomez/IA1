@@ -1,0 +1,29 @@
+digraph DecisionTree {
+  node [shape=box, style=filled, color=lightblue];
+
+  node0 [label="Feature 0 (Outlook)"];
+  
+  // Value 0 branch
+  node1 [label="Feature 1 (Temperature)"];
+  node0 -> node1 [label="Value 0"];
+
+  node2 [label="Leaf: N"];
+  node1 -> node2 [label="Value 0"];
+
+  node3 [label="Leaf: P"];
+  node1 -> node3 [label="Value 1"];
+
+  // Value 1 branch
+  node4 [label="Leaf: P"];
+  node0 -> node4 [label="Value 1"];
+
+  // Value 2 branch
+  node5 [label="Feature 2 (Humidity)"];
+  node0 -> node5 [label="Value 2"];
+
+  node6 [label="Leaf: P"];
+  node5 -> node6 [label="Value 0"];
+
+  node7 [label="Leaf: N"];
+  node5 -> node7 [label="Value 1"];
+}
