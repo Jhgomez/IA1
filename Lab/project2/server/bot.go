@@ -91,9 +91,9 @@ func main() {
 
 			var list string
 
-			for _, board := range data1 {
-				if board["name"] == "todo" {
-					list = fmt.Sprintf("%s", board["id"])
+			for _, listColumn := range data1 {
+				if listColumn["name"] == "todo" {
+					list = fmt.Sprintf("%s", listColumn["id"])
 				}
 			}
 
@@ -108,9 +108,8 @@ func main() {
 
 			// fmt.Println(strings.TrimSpace(parts[0][9:]))
 			// fmt.Println(strings.TrimSpace(parts[1]))
-			fmt.Println(strings.TrimSpace(parts[1]))
-			fmt.Println(strings.TrimSpace(parts[2]))
 
+			// set http post request parameters as described here
 			params.Set("idList", list)
 			params.Set("name", strings.TrimSpace(parts[1]))
 			params.Set("desc", strings.TrimSpace(parts[2]))
@@ -194,29 +193,34 @@ func main() {
 				fmt.Printf("error unmarshalling board lists JSON %v\n", err)
 			}
 
-			var list string
+			var destionationList string
 
 			parts := strings.Split(update.Message.Text, "\n")
-
-			for _, board := range data1 {
-				if board["name"] == parts[2] {
-					list = fmt.Sprintf("%s", board["id"])
-				}
-			}
-
-			if list == "" {
-				fmt.Println(urlWithParams)
-				msg.Text = "Unable to move card, invalid list name"
-				break
-			}
-
-			params.Set("idList", list)
 
 			if len(parts) < 7 {
 				update.Message.Text = "Please enter all the command information, card ID and card name"
 			}
 
-			urlWithParams = fmt.Sprintf("https://api.trello.com/1/cards/%s?%s", parts[4], params.Encode())
+			listName := parts[2]
+
+			for _, listColumn := range data1 {
+				if listColumn["name"] == listName {
+					destionationList = fmt.Sprintf("%s", listColumn["id"])
+				}
+			}
+
+			if destionationList == "" {
+				fmt.Println(urlWithParams)
+				msg.Text = "Unable to move card, invalid list name"
+				break
+			}
+
+			// formed URL as described here https://developer.atlassian.com/cloud/trello/rest/api-group-cards/#api-cards-id-put
+			params.Set("idList", destionationList)
+
+			cardId := parts[4]
+
+			urlWithParams = fmt.Sprintf("https://api.trello.com/1/cards/%s?%s", cardId, params.Encode())
 
 			// Create a POST request (with no body, since we're sending everything in the URL)
 			req, err := http.NewRequest(http.MethodPut, urlWithParams, nil)
@@ -239,7 +243,7 @@ func main() {
 				log.Fatalf("Trello API returned %s", resp.Status)
 			}
 
-			update.Message.Text = fmt.Sprintf("Card \"%s\" is in progress now", parts[4])
+			// update.Message.Text = fmt.Sprintf("Card \"%s\" is in progress now", )
 
 			body, err = io.ReadAll(resp.Body)
 			defer resp.Body.Close()
@@ -254,10 +258,12 @@ func main() {
 				fmt.Printf("error unmarshalling JSON %v", err)
 			}
 
-			if data["name"] != parts[6] {
-				msg.Text = fmt.Sprintf("Actual name of card is \"%s\" and its now in %s ✅ ", data["name"], parts[2])
+			receivedCardName := parts[6]
+
+			if data["name"] != receivedCardName {
+				msg.Text = fmt.Sprintf("Actual name of card is \"%s\" and its now in %s ✅ ", data["name"], listName)
 			} else {
-				msg.Text = fmt.Sprintf("Card \"%s\" is now in progress ✅", parts[6])
+				msg.Text = fmt.Sprintf("Card \"%s\" is now in %s ✅", receivedCardName, listName)
 			}
 
 		default:
