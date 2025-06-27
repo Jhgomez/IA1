@@ -160,9 +160,9 @@ func main() {
 				log.Panic(err)
 			}
 
-			msg.Text = fmt.Sprintf("/inprogress\nID:\n%s\nName:\n%s", data["id"], data["name"])
+			msg.Text = fmt.Sprintf("/move\nlist:\n<in_progress or done>\nID:\n%s\nName:\n%s", data["id"], data["name"])
 
-		case "inprogress":
+		case "move":
 			// Build the query parameters
 			params := url.Values{}
 			params.Set("key", trello_key)
@@ -196,28 +196,27 @@ func main() {
 
 			var list string
 
+			parts := strings.Split(update.Message.Text, "\n")
+
 			for _, board := range data1 {
-				if board["name"] == "in_progress" {
+				if board["name"] == parts[2] {
 					list = fmt.Sprintf("%s", board["id"])
 				}
 			}
 
 			if list == "" {
 				fmt.Println(urlWithParams)
-				fmt.Println("no list with name in_progress")
-				msg.Text = "Unable to move card"
+				msg.Text = "Unable to move card, invalid list name"
 				break
 			}
 
 			params.Set("idList", list)
 
-			parts := strings.Split(update.Message.Text, "\n")
-
-			if len(parts) < 5 {
+			if len(parts) < 7 {
 				update.Message.Text = "Please enter all the command information, card ID and card name"
 			}
 
-			urlWithParams = fmt.Sprintf("https://api.trello.com/1/cards/%s?%s", parts[2], params.Encode())
+			urlWithParams = fmt.Sprintf("https://api.trello.com/1/cards/%s?%s", parts[4], params.Encode())
 
 			// Create a POST request (with no body, since we're sending everything in the URL)
 			req, err := http.NewRequest(http.MethodPut, urlWithParams, nil)
@@ -255,10 +254,10 @@ func main() {
 				fmt.Printf("error unmarshalling JSON %v", err)
 			}
 
-			if data["name"] != parts[4] {
-				msg.Text = fmt.Sprintf("Actual name of card is \"%s\" and its now in progress ✅ ", data["name"])
+			if data["name"] != parts[6] {
+				msg.Text = fmt.Sprintf("Actual name of card is \"%s\" and its now in %s ✅ ", data["name"], parts[2])
 			} else {
-				msg.Text = fmt.Sprintf("Card \"%s\" is now in progress ✅", parts[4])
+				msg.Text = fmt.Sprintf("Card \"%s\" is now in progress ✅", parts[6])
 			}
 
 		default:
