@@ -104,14 +104,16 @@ func main() {
 				break
 			}
 
-			parts := strings.Split(update.Message.Text, "-")
+			parts := strings.Split(update.Message.Text, "\n")
 
-			fmt.Println(strings.TrimSpace(parts[0][9:]))
+			// fmt.Println(strings.TrimSpace(parts[0][9:]))
+			// fmt.Println(strings.TrimSpace(parts[1]))
 			fmt.Println(strings.TrimSpace(parts[1]))
+			fmt.Println(strings.TrimSpace(parts[2]))
 
 			params.Set("idList", list)
-			params.Set("name", strings.TrimSpace(parts[0][9:]))
-			params.Set("desc", strings.TrimSpace(parts[1]))
+			params.Set("name", strings.TrimSpace(parts[1]))
+			params.Set("desc", strings.TrimSpace(parts[2]))
 
 			// Construct the full URL with query string
 			urlWithParams = fmt.Sprintf("https://api.trello.com/1/cards?%s", params.Encode())
@@ -152,9 +154,18 @@ func main() {
 			}
 
 			// fmt.Printf("✅ Created card!\n  ID:   %s\n  Name: %s\n  URL:  %s\n", data["id"], data["name"], data["url"])
-			msg.Text = fmt.Sprintf("✅ Created card!\n  ID:   %s\n  Name: %s\n  URL:  %s\n", data["id"], data["name"], data["url"])
-		case "status":
-			msg.Text = "I'm ok."
+			msg.Text = fmt.Sprintf("✅ Card Created!, copy and paste next message to move to progress. URL: %s", data["url"])
+
+			if _, err := bot.Send(msg); err != nil {
+				log.Panic(err)
+			}
+
+			msg.Text = fmt.Sprintf("/inprogress\nID:\n%s\nName:\n%s", data["id"], data["name"])
+
+		case "inprogress":
+			parts := strings.Split(update.Message.Text, "\n")
+
+			fmt.Println(update.Message.Text)
 		default:
 			msg.Text = "I don't know that command"
 		}
