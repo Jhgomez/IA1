@@ -7,13 +7,21 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"os"
 	"strings"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
+var (
+	tg_key       = os.Getenv("TG_API_KEY")
+	trello_key   = os.Getenv("TRELLO_API_KEY")
+	trello_token = os.Getenv("TRELLO_TOKEN")
+	board_id     = os.Getenv("TRELLO_BOARD_ID")
+)
+
 func main() {
-	bot, err := tgbotapi.NewBotAPI("")
+	bot, err := tgbotapi.NewBotAPI(tg_key)
 	if err != nil {
 		log.Panic(err)
 	}
@@ -52,12 +60,12 @@ func main() {
 
 			// Build the query parameters
 			params := url.Values{}
-			params.Set("key", "")
-			params.Set("token", "")
+			params.Set("key", trello_key)
+			params.Set("token", trello_token)
 
-			endpoint := "https://api.trello.com/1/boards//lists"
+			urlWithParams := fmt.Sprintf("https://api.trello.com/1/boards/%s/lists?%s", board_id, params.Encode())
 
-			urlWithParams := fmt.Sprintf("%s?%s", endpoint, params.Encode())
+			// urlWithParams := fmt.Sprintf("%s?%s", endpoint, params.Encode())
 
 			resp, err := http.Get(urlWithParams)
 
@@ -77,6 +85,7 @@ func main() {
 			var data1 []map[string]interface{}
 
 			if err := json.Unmarshal(body, &data1); err != nil {
+				fmt.Println(urlWithParams)
 				fmt.Printf("error unmarshalling board lists JSON %v\n", err)
 			}
 
@@ -95,19 +104,18 @@ func main() {
 				break
 			}
 
-			endpoint = "https://api.trello.com/1/cards"
-
 			parts := strings.Split(update.Message.Text, "-")
 
-			fmt.Println(strings.TrimSpace(parts[0][7:]))
+			fmt.Println(strings.TrimSpace(parts[0][9:]))
 			fmt.Println(strings.TrimSpace(parts[1]))
 
 			params.Set("idList", list)
-			params.Set("name", strings.TrimSpace(parts[0][7:]))
+			params.Set("name", strings.TrimSpace(parts[0][9:]))
 			params.Set("desc", strings.TrimSpace(parts[1]))
 
 			// Construct the full URL with query string
-			urlWithParams = fmt.Sprintf("%s?%s", endpoint, params.Encode())
+			urlWithParams = fmt.Sprintf("https://api.trello.com/1/cards?%s", params.Encode())
+			// urlWithParams = fmt.Sprintf("%s?%s", endpoint, params.Encode())
 
 			// Create a POST request (with no body, since we're sending everything in the URL)
 			req, err := http.NewRequest(http.MethodPost, urlWithParams, nil)
