@@ -163,9 +163,104 @@ func main() {
 			msg.Text = fmt.Sprintf("/inprogress\nID:\n%s\nName:\n%s", data["id"], data["name"])
 
 		case "inprogress":
+			// Build the query parameters
+			params := url.Values{}
+			params.Set("key", trello_key)
+			params.Set("token", trello_token)
+
+			urlWithParams := fmt.Sprintf("https://api.trello.com/1/boards/%s/lists?%s", board_id, params.Encode())
+
+			// urlWithParams := fmt.Sprintf("%s?%s", endpoint, params.Encode())
+
+			resp, err := http.Get(urlWithParams)
+
+			if err != nil {
+				log.Fatalf("request failed: %v", err)
+			}
+
+			defer resp.Body.Close()
+
+			body, err := io.ReadAll(resp.Body)
+			resp.Body.Close()
+
+			if err != nil {
+				fmt.Printf("error reading body %v", err)
+			}
+
+			var data1 []map[string]interface{}
+
+			if err := json.Unmarshal(body, &data1); err != nil {
+				fmt.Println(urlWithParams)
+				fmt.Printf("error unmarshalling board lists JSON %v\n", err)
+			}
+
+			var list string
+
+			for _, board := range data1 {
+				if board["name"] == "in_progress" {
+					list = fmt.Sprintf("%s", board["id"])
+				}
+			}
+
+			if list == "" {
+				fmt.Println(urlWithParams)
+				fmt.Println("no list with name in_progress")
+				msg.Text = "Unable to move card"
+				break
+			}
+
+			params.Set("idList", list)
+
 			parts := strings.Split(update.Message.Text, "\n")
 
-			fmt.Println(update.Message.Text)
+			if len(parts) < 5 {
+				update.Message.Text = "Please enter all the command information, card ID and card name"
+			}
+
+			urlWithParams = fmt.Sprintf("https://api.trello.com/1/cards/%s?%s", parts[2], params.Encode())
+
+			// Create a POST request (with no body, since we're sending everything in the URL)
+			req, err := http.NewRequest(http.MethodPut, urlWithParams, nil)
+			if err != nil {
+				log.Fatalf("Error building request: %v", err)
+			}
+
+			// (Optional) Set a custom User-Agent
+			req.Header.Set("User-Agent", "my-go-trello-client/1.0")
+
+			// Perform the request
+			resp, err = http.DefaultClient.Do(req)
+			if err != nil {
+				log.Fatalf("Request to move to in progress failed: %v", err)
+			}
+			defer resp.Body.Close()
+
+			// Check for non-200 status
+			if resp.StatusCode != http.StatusOK {
+				log.Fatalf("Trello API returned %s", resp.Status)
+			}
+
+			update.Message.Text = fmt.Sprintf("Card \"%s\" is in progress now", parts[4])
+
+			body, err = io.ReadAll(resp.Body)
+			defer resp.Body.Close()
+
+			if err != nil {
+				fmt.Printf("error reading body %v", err)
+			}
+
+			var data map[string]interface{}
+
+			if err := json.Unmarshal(body, &data); err != nil {
+				fmt.Printf("error unmarshalling JSON %v", err)
+			}
+
+			if data["name"] != parts[4] {
+				msg.Text = fmt.Sprintf("Actual name of card is \"%s\" and its now in progress ✅ ", data["name"])
+			} else {
+				msg.Text = fmt.Sprintf("Card \"%s\" is now in progress ✅", parts[4])
+			}
+
 		default:
 			msg.Text = "I don't know that command"
 		}
