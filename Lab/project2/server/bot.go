@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"github.com/go-vgo/robotgo"
 )
 
 var (
@@ -265,6 +266,43 @@ func main() {
 			} else {
 				msg.Text = fmt.Sprintf("Card \"%s\" is now in %s ✅", receivedCardName, listName)
 			}
+
+		case "iniciar_daily":
+			robotgo.KeySleep = 100
+
+			//    robotgo.Sleep(3)
+			robotgo.MoveClick(132, 852, "left", false)
+			robotgo.Sleep(3)
+			robotgo.MoveClick(1693, 98, "left", false)
+			//    robotgo.Sleep(1)
+			robotgo.MilliSleep(600)
+			robotgo.MoveClick(1622, 280, "left", false)
+			//    robotgo.Sleep(1)
+			robotgo.MilliSleep(600)
+			robotgo.MoveClick(1527, 312, "left", false)
+
+			robotgo.KeyTap("t", "ctrl")
+			robotgo.MilliSleep(600)
+			robotgo.MoveClick(1693, 98, "left", false)
+			//    robotgo.Sleep(1)
+			robotgo.MilliSleep(600)
+			robotgo.MoveClick(1622, 280, "left", false)
+			//    robotgo.Sleep(1)
+			robotgo.MilliSleep(600)
+			robotgo.MoveClick(1499, 330, "left", false)
+
+			robotgo.Sleep(1)
+			robotgo.MoveClick(169, 858, "left", false)
+			robotgo.Sleep(1)
+			robotgo.TypeStr("cd ~/Documents")
+			robotgo.MilliSleep(500)
+			robotgo.KeyTap("enter")
+			robotgo.MilliSleep(500)
+			robotgo.TypeStr("code")
+			robotgo.MilliSleep(500)
+			robotgo.KeyTap("enter")
+
+			msg.Text = "Everything is ready for your daily"
 
 		default:
 			msg.Text = "I don't know that command"
