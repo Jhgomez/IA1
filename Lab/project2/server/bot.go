@@ -12,22 +12,36 @@ import (
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/go-vgo/robotgo"
+	"github.com/joho/godotenv"
 )
 
 var (
-	tg_key       = os.Getenv("TG_API_KEY")
-	trello_key   = os.Getenv("TRELLO_API_KEY")
-	trello_token = os.Getenv("TRELLO_TOKEN")
-	board_id     = os.Getenv("TRELLO_BOARD_ID")
+	tg_key       = ""
+	trello_key   = ""
+	trello_token = ""
+	board_id     = ""
 )
 
+func init() {
+	err := godotenv.Load()
+
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
 func main() {
+	tg_key := os.Getenv("TG_API_KEY")
+	trello_key := os.Getenv("TRELLO_API_KEY")
+	trello_token := os.Getenv("TRELLO_TOKEN")
+	board_id := os.Getenv("TRELLO_BOARD_ID")
+
 	bot, err := tgbotapi.NewBotAPI(tg_key)
 	if err != nil {
 		log.Panic(err)
 	}
 
-	bot.Debug = true
+	//	bot.Debug = true
 
 	log.Printf("Authorized on account %s", bot.Self.UserName)
 
