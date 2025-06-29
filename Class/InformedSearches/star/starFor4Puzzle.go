@@ -3,21 +3,46 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"math"
 	"os"
 	"sort"
+	"strconv"
 	"strings"
 )
 
 var id = 1
 
-func heuristic(start, end string) int {
-	tilesOut := 0
-	for i := 0; i < len(start); i++ {
-		if start[i] != end[i] {
-			tilesOut++
+// func heuristic(start, end string) int {
+// 	tilesOut := 0
+// 	for i := 0; i < len(start); i++ {
+// 		if start[i] != end[i] {
+// 			tilesOut++
+// 		}
+// 	}
+// 	return tilesOut
+// }
+
+func heuristic(start, end string, h int) int {
+	if h == 1 { // casillas fuera de lugar
+		tilesOut := 0
+		for i := 0; i < len(start); i++ {
+			if start[i] != end[i] {
+				tilesOut++
+			}
 		}
+		return tilesOut
+	} else if h == 2 { // distancia manhattan
+		man := 0
+		for i := 0; i < len(start); i++ {
+			c := string(start[i])
+			pos := strings.Index(end, c)
+			if pos >= 0 {
+				man += int(math.Abs(float64(i - pos)))
+			}
+		}
+		return man
 	}
-	return tilesOut
+	return 0
 }
 
 func inc() int {
@@ -32,7 +57,7 @@ type Node struct {
 	level int
 }
 
-func successors(n Node, end string) []Node {
+func successors(n Node, end string, h int) []Node {
 	var suc []Node
 	for i := 0; i < len(n.state)-1; i++ {
 		level := n.level + 1
@@ -41,7 +66,7 @@ func successors(n Node, end string) []Node {
 		child := string(chars)
 		suc = append(suc, Node{
 			state: child,
-			cost:  heuristic(child, end) + level,
+			cost:  heuristic(child, end, h) + level,
 			id:    inc(),
 			level: level,
 		})
@@ -49,11 +74,11 @@ func successors(n Node, end string) []Node {
 	return suc
 }
 
-func aStar(start, end string) string {
+func aStar(start, end string, h int) string {
 	dot := "graph{"
 	list := []Node{{
 		state: start,
-		cost:  heuristic(start, end),
+		cost:  heuristic(start, end, h),
 		id:    id,
 		level: 0,
 	}}
@@ -69,7 +94,7 @@ func aStar(start, end string) string {
 			return dot
 		}
 
-		temp := successors(current, end)
+		temp := successors(current, end, h)
 		for _, val := range temp {
 			dot += fmt.Sprintf("%d [label=\"%s\"]; ", val.id, val.state)
 			dot += fmt.Sprintf("%d--%d [label=\"%d+%d\"];\n", current.id, val.id, val.cost-val.level, val.level)
@@ -98,12 +123,20 @@ func main() {
 		input = "halo hola"
 	}
 	parts := strings.Split(input, " ")
-	if len(parts) < 2 {
+	if len(parts) < 3 {
 		fmt.Println("Invalid entry.")
 		return
 	}
 	start := parts[0]
 	end := parts[1]
+	heuristic, err := strconv.Atoi(parts[2])
 
-	fmt.Println(aStar(start, end))
+	if err != nil {
+		fmt.Println("Error:", err)
+		return
+	}
+
+	fmt.Println(aStar(start, end, heuristic))
 }
+
+// `dot -Tpng star.txt > star.png``
