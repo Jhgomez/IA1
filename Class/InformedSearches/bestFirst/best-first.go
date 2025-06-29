@@ -83,10 +83,16 @@ func bestfirst(start, end string, h int) string {
 		})
 
 		cont++
+
 		if cont > 100 {
 			fmt.Println("The search is looped!")
 			dot += "}"
 			return dot
+		}
+
+		// you can print the list on an specific level
+		if cont == 5 {
+			fmt.Println(list)
 		}
 	}
 
@@ -115,7 +121,7 @@ func main() {
 }
 
 // this program will produce some output in the console in the format of a .dot file
-// copy the code, paste it in a .txt file and run the following code dot -Tpng sample.txt > sample.png
+// copy the code, paste it in a .txt file and run the following code `dot -Tpng bestFirst.txt > bestFirst.png``
 // this assumes you have downloaded and added graphbiz bin folder to your path
 // you can follow this instructions here: https://notepad.onghu.com/2024/windows-use-graphviz-without-installation/
 // but basically you should not dowload the installer for windows, instead just download the binaries, store them
