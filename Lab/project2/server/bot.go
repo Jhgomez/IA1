@@ -73,7 +73,7 @@ func main() {
 			msg.Text = "I understand /historia and /status."
 		case "historia":
 
-			// Build the query parameters
+			// Build the query parameters to get the lists in your board
 			params := url.Values{}
 			params.Set("key", trello_key)
 			params.Set("token", trello_token)
@@ -177,7 +177,7 @@ func main() {
 			msg.Text = fmt.Sprintf("/move\nlist:\n<in_progress or done>\nID:\n%s\nName:\n%s", data["id"], data["name"])
 
 		case "move":
-			// Build the query parameters
+			// Build the query parameters to get the lists in your board
 			params := url.Values{}
 			params.Set("key", trello_key)
 			params.Set("token", trello_token)
@@ -285,6 +285,7 @@ func main() {
 			robotgo.KeySleep = 100
 
 			//    robotgo.Sleep(3)
+			// the false argument is to let it know it is a single click, double clicks will pass  a value of "true"
 			robotgo.MoveClick(132, 852, "left", false)
 			robotgo.Sleep(3)
 			robotgo.MoveClick(1693, 98, "left", false)
