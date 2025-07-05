@@ -48,8 +48,8 @@ func createPlot(X, Y, Ypredict []float64) {
 
 func main() {
 	// Datos de ejemplo (X e Y)
-	X := []float64{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
-	y := []float64{1, 4, 1, 5, 3, 7, 2, 7, 4, 9}
+	X := []float64{2, 5, 1, 9, 6, 3, 4}
+	y := []float64{6, 7, 5, 8, 9, 6, 5}
 
 	// Instancia de LinearRegression
 	model := ml.LinearRegression{}
@@ -64,12 +64,37 @@ func main() {
 	mse := model.MSE(y, yPredict)
 	r2 := model.R2(y, yPredict)
 
+	xNew := []float64{15}
+	yNew := model.Predict(xNew)
+	fmt.Printf("Predicción para x = 15: %.4f\n", yNew[0]) // Mostramos la predicción
+
 	// Imprimir los resultados
 	fmt.Println("X:", X)
 	fmt.Println("y:", y)
 	fmt.Println("yPredict:", yPredict)
-	fmt.Printf("MSE: %.4f\n", mse)
-	fmt.Printf("R2: %.4f\n", r2)
+	// MSE, mide en unidades de la variable de salida cuánto se equivocan en promedio (o en total) las predicciones.
+	fmt.Printf("MSE/error cuadratico: %.4f\n", mse)
+	// Nos indica que tan buen modelo es, el ideal es 1 si es abajo de 0.9 el modelo no es muy bueno
+	fmt.Printf("R2/ Coeficiente de determinación: %.4f\n", r2)
+
+	var sumX, sumY, sumXY, sumX2 float64
+	n := float64(len(X))
+
+	for i := 0; i < len(X); i++ {
+		sumX += X[i]
+		sumY += y[i]
+		sumXY += X[i] * y[i]
+		sumX2 += X[i] * X[i]
+	}
+
+	slope := (n*sumXY - sumX*sumY) / (n*sumX2 - sumX*sumX)
+	intercept := (sumY / n) - slope*(sumX/n)
+
+	// este coeficiente indica cuánto cambia y por cada unidad que cambia x.
+	fmt.Printf("Coeficiente de regresión (pendiente): %.4f\n", slope)
+
+	// este numero indica valor de y cuando x = 0
+	fmt.Printf("Intercepto: %.4f\n", intercept)
 
 	createPlot(X, y, yPredict)
 }

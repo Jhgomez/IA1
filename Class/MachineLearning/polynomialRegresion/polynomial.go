@@ -48,9 +48,9 @@ func createPlot(X, Y []float64, linePts plotter.XYs) {
 
 func main() {
 	// Datos de ejemplo (X e Y)
-	X := []float64{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
-	y := []float64{1, 4, 1, 5, 3, 7, 2, 7, 4, 9}
-	degree := 6
+	X := []float64{2, 5, 1, 9, 6, 3, 4}
+	y := []float64{6, 7, 5, 8, 9, 6, 5}
+	degree := 4
 
 	// Instancia de LinearRegression
 	model := ml.PolynomialRegression{Degree: degree}
@@ -69,8 +69,14 @@ func main() {
 	fmt.Println("X:", X)
 	fmt.Println("y:", y)
 	fmt.Println("yPredict:", yPredict)
-	fmt.Printf("MSE: %.4f\n", mse)
-	fmt.Printf("R2: %.4f\n", r2)
+	// MSE, mide en unidades de la variable de salida cuánto se equivocan en promedio (o en total) las predicciones.
+	fmt.Printf("MSE/error cuadratico: %.4f\n", mse)
+	// Nos indica que tan buen modelo es, el ideal es 1 si es abajo de 0.9 el modelo no es muy bueno
+	fmt.Printf("R2/ Coeficiente de determinación: %.4f\n", r2)
+
+	xNew := []float64{15}
+	yNew := model.Predict(xNew)
+	fmt.Printf("Predicción para x = 15: %.4f\n", yNew[0]) // Mostramos la predicción
 
 	// generar curva
 	const steps = 100
